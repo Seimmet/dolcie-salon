@@ -111,11 +111,28 @@ export default function Booking() {
     })) || [];
   }, [styles, selectedStyleId]);
 
+  const selectedStylist = useMemo(() => 
+    stylists.find(s => s.id === selectedStylistId),
+    [stylists, selectedStylistId]
+  );
+
+  const victoriaSurcharge = useMemo(() => {
+    if (selectedStylist?.fullName.toLowerCase().includes('victoria')) {
+        return 100;
+    }
+    return 0;
+  }, [selectedStylist]);
+
   const selectedPricing = useMemo(() => {
     if (!selectedStyleId || !selectedCategoryId) return null;
     const style = styles.find(s => s.id === selectedStyleId);
     return style?.pricing?.find(p => p.categoryId === selectedCategoryId);
   }, [styles, selectedStyleId, selectedCategoryId]);
+
+  const adjustedBasePrice = useMemo(() => {
+    if (!selectedPricing) return 0;
+    return Number(selectedPricing.price) + victoriaSurcharge;
+  }, [selectedPricing, victoriaSurcharge]);
 
   const activePromo = useMemo(() => {
     if (!selectedPromoId) return null;
@@ -132,11 +149,11 @@ export default function Booking() {
 
   const discountedPrice = useMemo(() => {
     if (!selectedPricing) return null;
-    if (!appliedDiscountPercentage) return selectedPricing.price;
+    if (!appliedDiscountPercentage) return adjustedBasePrice;
     const discountFactor = 1 - appliedDiscountPercentage / 100;
-    const price = Number(selectedPricing.price) * discountFactor;
+    const price = adjustedBasePrice * discountFactor;
     return Math.round(price * 100) / 100;
-  }, [selectedPricing, appliedDiscountPercentage]);
+  }, [selectedPricing, appliedDiscountPercentage, adjustedBasePrice]);
 
   const effectivePromoPrice = useMemo(() => {
     if (!activePromo) return null;
@@ -151,11 +168,11 @@ export default function Booking() {
     // Check for fixed promo price (handle string or number)
     const price = Number(activePromo.promoPrice);
     if (!isNaN(price) && price > 0) {
-      return price;
+      return price + victoriaSurcharge;
     }
 
     return null;
-  }, [activePromo, selectedStyleId, selectedPricing, appliedDiscountPercentage, discountedPrice]);
+  }, [activePromo, selectedStyleId, selectedPricing, appliedDiscountPercentage, discountedPrice, victoriaSurcharge]);
 
   // --- Initialization ---
   useEffect(() => {
@@ -762,11 +779,18 @@ export default function Booking() {
                         <span>Base price:</span>
                         <span>${selectedPricing.price}</span>
                       </div>
+                      {victoriaSurcharge > 0 && (
+                        <div className="flex justify-between text-sm text-muted-foreground">
+                            <span>Master Stylist Surcharge (Victoria):</span>
+                            <span>+${victoriaSurcharge}</span>
+                        </div>
+                      )}
+                      
                       {appliedDiscountPercentage > 0 && discountedPrice !== null && (
                         <>
                           <div className="flex justify-between text-sm text-emerald-700">
                             <span>Promo discount ({appliedDiscountPercentage}%):</span>
-                            <span>- ${(selectedPricing.price - discountedPrice).toFixed(2)}</span>
+                            <span>- ${(adjustedBasePrice - discountedPrice).toFixed(2)}</span>
                           </div>
                           <div className="flex justify-between text-base font-semibold">
                             <span>Promo price:</span>
@@ -782,9 +806,15 @@ export default function Booking() {
                           </div>
                           <div className="flex justify-between text-xs text-muted-foreground">
                             <span>You save</span>
-                            <span>${(selectedPricing.price - effectivePromoPrice).toFixed(2)}</span>
+                            <span>${(adjustedBasePrice - effectivePromoPrice).toFixed(2)}</span>
                           </div>
                         </>
+                      )}
+                      {appliedDiscountPercentage === 0 && effectivePromoPrice === null && victoriaSurcharge > 0 && (
+                        <div className="flex justify-between text-base font-semibold">
+                            <span>Total price:</span>
+                            <span>${adjustedBasePrice}</span>
+                        </div>
                       )}
                       <div className="flex justify-between text-sm text-muted-foreground">
                         <span>Duration:</span>
@@ -1035,11 +1065,17 @@ export default function Booking() {
                             <span>Base price</span>
                             <span>${selectedPricing.price}</span>
                           </div>
+                          {victoriaSurcharge > 0 && (
+                            <div className="flex justify-between text-sm text-muted-foreground">
+                                <span>Master Stylist Surcharge (Victoria)</span>
+                                <span>+${victoriaSurcharge}</span>
+                            </div>
+                          )}
                           {appliedDiscountPercentage > 0 && discountedPrice !== null && (
                             <>
                               <div className="flex justify-between text-sm text-emerald-700">
                                 <span>Promo discount ({appliedDiscountPercentage}%)</span>
-                                <span>- ${(Number(selectedPricing.price) - discountedPrice).toFixed(2)}</span>
+                                <span>- ${(adjustedBasePrice - discountedPrice).toFixed(2)}</span>
                               </div>
                               <div className="flex justify-between text-base font-semibold">
                                 <span>Promo price</span>
@@ -1056,7 +1092,7 @@ export default function Booking() {
                           {appliedDiscountPercentage === 0 && effectivePromoPrice === null && (
                             <div className="flex justify-between text-base font-semibold">
                               <span>Total price</span>
-                              <span>${selectedPricing.price}</span>
+                              <span>${adjustedBasePrice}</span>
                             </div>
                           )}
                         </div>

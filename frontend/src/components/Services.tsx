@@ -12,28 +12,28 @@ import styleTwists from '@/assets/signature 6.jpeg';
 
 const services = [
   {
-    name: 'Design stitch tribal braids',
+    name: 'Designer stitch braids',
     description: 'Gentle on scalp, natural-looking braids that reduce tension and last longer.',
     price: 'From $300',
     duration: '5-6.5 hours',
     image: styleBoxBraids,
   },
   {
-    name: 'Small medium gypsy bob',
+    name: 'Designer Stitch weave',
     description: 'Intricate cornrow patterns with stunning precision and artistic designs.',
     price: 'From $400',
     duration: '4-7 hours',
     image: styleCornrows,
   },
   {
-    name: 'Stitch lemonade braids',
+    name: 'Medium large boho',
     description: 'Soft, goddess-like locs with curly ends for a romantic, free-spirited look.',
     price: 'From $350',
     duration: '5-9 hours',
     image: styleBohoLocs,
   },
   {
-    name: '8 stitch braid',
+    name: 'Flip over braids',
     description: 'Senegalese twists, passion twists, and spring twists for versatile elegance.',
     price: 'From $160',
     duration: '4-7 hours',
@@ -91,18 +91,18 @@ const Services = () => {
                 </p>
                 
                 {/* Footer */}
-                <div className="flex items-center justify-between">
+                {/* <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Clock size={16} />
                     <span className="font-sans text-sm">{service.duration}</span>
                   </div>
-                  {/* <a
+                  <a
                     href="#contact"
                     className="font-sans text-primary text-sm font-medium flex items-center gap-1 hover:gap-2 transition-all"
                   >
                     Learn More <ArrowRight size={16} />
-                  </a> */}
-                </div>
+                  </a>
+                </div> */}
               </div>
             </div>
           ))}

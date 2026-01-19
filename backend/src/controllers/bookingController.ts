@@ -74,6 +74,11 @@ export const getBookings = async (req: Request, res: Response): Promise<void> =>
                 duration = pricing.durationMinutes;
             }
         }
+
+        // Add Victoria Surcharge
+        if (booking.stylist?.user?.fullName?.toLowerCase().includes('victoria')) {
+             price += 100;
+        }
         
         return {
             ...booking,
@@ -395,6 +400,11 @@ export const updateBooking = async (req: Request, res: Response): Promise<void> 
                  }
              });
              if (pricing) price = Number(pricing.price);
+        }
+
+        // Add Victoria Surcharge
+        if (b.stylist?.user?.fullName?.toLowerCase().includes('victoria')) {
+             price += 100;
         }
 
         const responseBooking = {

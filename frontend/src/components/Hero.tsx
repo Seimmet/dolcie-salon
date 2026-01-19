@@ -14,7 +14,7 @@ const Hero = () => {
         <img
           src={heroBraids}
           alt="Luxury hair braiding"
-           className="w-full h-full object-cover object-center md:object-[50%_20%]"
+           className="w-full h-full object-cover object-center md:object-[50%_20%] lg:object-top"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/60 to-background" />
       </div>
