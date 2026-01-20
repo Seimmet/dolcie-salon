@@ -43,10 +43,10 @@ const Hero = () => {
             <Button variant="gold" size="xl" onClick={() => navigate('/booking')}>
               Book Appointment
             </Button>
-            <Button variant="gold-outline" size="xl">
+            {/* <Button variant="gold-outline" size="xl">
               <Mic className="mr-2 h-5 w-5" />
               Talk To Support
-            </Button>
+            </Button> */}
           </div>
         </div>
       </div>
