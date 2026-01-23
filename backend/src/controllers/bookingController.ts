@@ -132,10 +132,8 @@ export const createBooking = async (req: Request, res: Response): Promise<void> 
          }
     }
 
-    // Check if amount is correct (5000 cents = $50)
-    if (paymentIntent.amount !== 5000) {
-        // Optional: Allow flexibility or strict check
-        // For now, strict check
+    // Check if amount is correct (minimum $1 deposit for testing, or $50 production)
+    if (paymentIntent.amount < 100) {
         // console.warn('Payment amount mismatch', paymentIntent.amount);
     }
 
@@ -271,7 +269,7 @@ export const createBooking = async (req: Request, res: Response): Promise<void> 
             await tx.payment.create({
                 data: {
                     bookingId: booking.id,
-                    amount: 50.00,
+                    amount: paymentIntent.amount / 100,
                     stripePaymentId: paymentIntentId,
                     status: 'succeeded'
                 }

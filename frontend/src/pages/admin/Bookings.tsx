@@ -126,8 +126,12 @@ function RecordPaymentDialog({ booking, onRecordPayment }: { booking: Booking; o
   // If Total Paid > 50, Remaining = (Service Price + 50) - Total Paid.
   
   const totalPaid = booking.payments?.reduce((sum, p) => sum + Number(p.amount), 0) || 0;
-  const servicePrice = Number(booking.service.price);
-  const depositAmount = 50; 
+  // Assume the first payment is the deposit if it exists, otherwise 0. 
+  // We sort by ID to be safe, assuming sequential IDs.
+  const sortedPayments = booking.payments ? [...booking.payments].sort((a, b) => a.id.localeCompare(b.id)) : [];
+  const initialDeposit = sortedPayments.length > 0 ? Number(sortedPayments[0].amount) : 0;
+  
+  const servicePrice = Number(booking.price || 0); // Use price from booking object which includes adjustments
   
   // The customer must pay Service Price + Deposit in total.
   // Since Deposit is already paid (to book), they owe the Service Price.
@@ -135,7 +139,7 @@ function RecordPaymentDialog({ booking, onRecordPayment }: { booking: Booking; o
   // effectively: Balance = Service Price - (TotalPaid - DepositAmount)
   // Which simplifies to: Balance = Service Price + DepositAmount - TotalPaid
   
-  const remainingBalance = Math.max(0, (servicePrice + depositAmount) - totalPaid);
+  const remainingBalance = Math.max(0, (servicePrice + initialDeposit) - totalPaid);
   
   const [amount, setAmount] = useState(remainingBalance);
   const [method, setMethod] = useState<'cash' | 'stripe'>('cash');
@@ -148,7 +152,12 @@ function RecordPaymentDialog({ booking, onRecordPayment }: { booking: Booking; o
   // Reset state when dialog opens
   useEffect(() => {
       if (open) {
-          setAmount(Math.max(0, (servicePrice + depositAmount) - (booking.payments?.reduce((sum, p) => sum + Number(p.amount), 0) || 0)));
+          // Recalculate based on current booking state
+          const currentTotalPaid = booking.payments?.reduce((sum, p) => sum + Number(p.amount), 0) || 0;
+          const currentPayments = booking.payments ? [...booking.payments].sort((a, b) => a.id.localeCompare(b.id)) : [];
+          const currentDeposit = currentPayments.length > 0 ? Number(currentPayments[0].amount) : 0;
+          
+          setAmount(Math.max(0, (Number(booking.price || 0) + currentDeposit) - currentTotalPaid));
           setMethod('cash');
           setClientSecret(null);
       }
@@ -214,11 +223,11 @@ function RecordPaymentDialog({ booking, onRecordPayment }: { booking: Booking; o
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label className="text-right">Booking Fee</Label>
-            <div className="col-span-3 font-medium text-green-600">Paid $50.00</div>
+            <div className="col-span-3 font-medium text-green-600">Paid ${initialDeposit.toFixed(2)}</div>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label className="text-right">Paid Towards Service</Label>
-            <div className="col-span-3 text-green-600 font-medium">-${Math.max(0, totalPaid - 50).toFixed(2)}</div>
+            <div className="col-span-3 text-green-600 font-medium">-${Math.max(0, totalPaid - initialDeposit).toFixed(2)}</div>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="amount" className="text-right">
@@ -511,6 +520,16 @@ export default function Bookings() {
                           <div className="pl-6">{booking.customer.phone}</div>
                           <div className="pl-6">{booking.customer.email}</div>
                         </div>
+                        
+                         {/* Payment Summary */}
+                         <div className="mt-2 pt-2 border-t text-sm">
+                            <div className="flex justify-between items-center">
+                               <span className="text-muted-foreground">Total Paid:</span>
+                               <span className="font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full border border-green-100">
+                                 ${(booking.payments?.reduce((sum, p) => sum + Number(p.amount), 0) || 0).toFixed(2)}
+                               </span>
+                            </div>
+                         </div>
                       </div>
 
                       <div className="space-y-4">
@@ -561,14 +580,23 @@ export default function Bookings() {
                            {/* Payment Action */}
                            {booking.status === 'completed' && (
                                <div className="flex items-center gap-2">
-                                   {(booking.payments?.reduce((sum, p) => sum + Number(p.amount), 0) || 0) >= (Number(booking.price || 0) + 50) ? ( 
-                                       <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Paid in Full</Badge>
-                                   ) : (
-                                       <RecordPaymentDialog 
-                                            booking={booking} 
-                                            onRecordPayment={(amount, method, stripePaymentId) => handleRecordPayment(booking.id, amount, method, stripePaymentId)} 
-                                       />
-                                   )}
+                                   {(() => {
+                                       const totalPaid = booking.payments?.reduce((sum, p) => sum + Number(p.amount), 0) || 0;
+                                       // Assume first payment is deposit
+                                       const initialDeposit = booking.payments && booking.payments.length > 0 
+                                            ? Number([...booking.payments].sort((a, b) => a.id.localeCompare(b.id))[0].amount) 
+                                            : 0;
+                                       const targetTotal = Number(booking.price || 0) + initialDeposit;
+                                       
+                                       return totalPaid >= targetTotal - 0.01 ? ( // tolerance for float
+                                           <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Paid in Full</Badge>
+                                       ) : (
+                                           <RecordPaymentDialog 
+                                                booking={booking} 
+                                                onRecordPayment={(amount, method, stripePaymentId) => handleRecordPayment(booking.id, amount, method, stripePaymentId)} 
+                                           />
+                                       );
+                                   })()}
                                </div>
                            )}
                            
