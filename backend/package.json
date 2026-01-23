@@ -9,7 +9,7 @@
     "db:export": "tsx prisma/export-data.ts",
     "db:import-excel": "tsx prisma/import-excel.ts",
     "db:clean": "tsx prisma/clean-db.ts",
-    "build": "tsc"
+    "build": "npx prisma generate && tsc"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
