@@ -97,7 +97,8 @@ export default function Booking() {
     : 50;
 
   const STRIPE_FEE_PERCENTAGE = 0.035;
-  const PROCESSING_FEE = depositAmount * STRIPE_FEE_PERCENTAGE;
+  const rawProcessingFee = depositAmount * STRIPE_FEE_PERCENTAGE;
+  const PROCESSING_FEE = Math.round(rawProcessingFee * 100) / 100;
   const TOTAL_DEPOSIT = depositAmount + PROCESSING_FEE;
   const TOTAL_DEPOSIT_CENTS = Math.round(TOTAL_DEPOSIT * 100);
   const availableVariations = useMemo(() => {
