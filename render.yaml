@@ -35,7 +35,7 @@ services:
       - key: OPENAI_API_KEY
         sync: false
 
-  - type: static
+  - type: web
     name: victoria-salon-frontend
     env: static
     rootDir: frontend
