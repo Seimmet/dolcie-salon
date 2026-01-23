@@ -823,7 +823,7 @@ export default function Booking() {
                     </div>
                      <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 mt-4 text-sm text-yellow-800">
                         <p className="font-bold">Deposit Required: ${TOTAL_DEPOSIT.toFixed(2)} (Includes 3.5% fee)</p>
-                        <p className="mt-1 text-red-600 font-bold">This deposit secures your appointment. Note: A 3.5% transaction fee is applied to the deposit. The remaining service cost will be charged in store after the service is completed.</p>
+                        {/* <p className="mt-1 text-red-600 font-bold">This deposit secures your appointment. Note: A 3.5% transaction fee is applied to the deposit. The remaining service cost will be charged in store after the service is completed.</p> */}
                     </div>
                  </div>
               ) : (
@@ -917,7 +917,7 @@ export default function Booking() {
                                             disabled={!slot.available}
                                             onClick={() => handleTimeSelect(date, slot.time)}
                                         >
-                                            {slot.time}
+                                            {formatTimeDisplay(slot.time)}
                                         </Button>
                                     )) : (
                                         <div className="text-xs text-center text-muted-foreground py-4">-</div>
@@ -1056,7 +1056,7 @@ export default function Booking() {
                       <div className="flex justify-between py-2 border-b">
                           <span className="text-muted-foreground">Date & Time</span>
                           <span className="font-medium">
-                              {selectedDate && format(selectedDate, 'MMM d, yyyy')} at {selectedTime}
+                              {selectedDate && format(selectedDate, 'MMM d, yyyy')} at {formatTimeDisplay(selectedTime)}
                           </span>
                       </div>
                       {selectedPricing && (
