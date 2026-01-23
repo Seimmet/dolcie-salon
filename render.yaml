@@ -47,10 +47,7 @@ services:
         destination: /index.html
     envVars:
       - key: VITE_API_URL
-        fromService:
-          type: web
-          name: victoria-salon-backend
-          property: host
+        sync: false
       - key: VITE_STRIPE_PUBLISHABLE_KEY
         sync: false
       - key: VITE_CHATBOT_ENABLED
