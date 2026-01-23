@@ -432,6 +432,18 @@ export default function Booking() {
     }
   }, [step, clientSecret, initializePayment]);
 
+  const formatTimeDisplay = (time: string | null) => {
+    if (!time) return '';
+    try {
+      const [hours, minutes] = time.split(':').map(Number);
+      const date = new Date();
+      date.setHours(hours, minutes);
+      return format(date, 'h:mm a');
+    } catch (e) {
+      return time;
+    }
+  };
+
   const renderProgressBar = () => {
     const steps = [
         { num: 1, label: "Policy" },
