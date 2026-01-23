@@ -50,7 +50,7 @@ services:
         fromService:
           type: web
           name: victoria-salon-backend
-          property: url
+          property: host
       - key: VITE_STRIPE_PUBLISHABLE_KEY
         sync: false
       - key: VITE_CHATBOT_ENABLED
