@@ -425,7 +425,7 @@ export default function Booking() {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast, TOTAL_DEPOSIT_CENTS]);
 
   useEffect(() => {
     if (step === 6 && !clientSecret) {
