@@ -68,7 +68,7 @@ export const createStyle = async (req: Request, res: Response): Promise<void> =>
       return;
     }
 
-    let imageUrl = null;
+    let imageUrl: string | null = null;
     if (req.file) {
       try {
         const result = await cloudinary.uploader.upload(req.file.path);
@@ -96,7 +96,7 @@ export const updateStyle = async (req: Request, res: Response): Promise<void> =>
     const { id } = req.params;
     const { name } = req.body;
 
-    let imageUrl = undefined;
+    let imageUrl: string | undefined = undefined;
     if (req.file) {
       try {
         const result = await cloudinary.uploader.upload(req.file.path);

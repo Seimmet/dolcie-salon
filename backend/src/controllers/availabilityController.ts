@@ -121,7 +121,7 @@ export const getAvailability = async (req: Request, res: Response): Promise<void
         if (!dayConfig || !dayConfig.isOpen) {
             result[dateKey] = [];
         } else {
-            const daySlots = [];
+            const daySlots: { time: string; available: boolean; spots: number; stylists: { id: string; name: string; }[]; }[] = [];
             
             // Filter bookings for this day
             const dayBookings = bookings.filter(b => 

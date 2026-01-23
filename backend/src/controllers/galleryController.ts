@@ -62,7 +62,7 @@ export const updateGalleryItem = async (req: Request, res: Response): Promise<vo
     const { id } = req.params;
     const { title, category, order } = req.body;
 
-    let imageUrl = undefined;
+    let imageUrl: string | undefined = undefined;
     if (req.file) {
       try {
         const result = await cloudinary.uploader.upload(req.file.path);

@@ -173,7 +173,7 @@ export const updateProfile = async (req: Request, res: Response): Promise<void> 
     // @ts-ignore
     const userId = req.user.id;
     const { fullName, email, phone, address, password, notificationConsent, birthDay, birthMonth } = req.body;
-    let profileImageUrl = null;
+    let profileImageUrl: string | null = null;
 
     // Handle Image Upload
     if (req.file) {
