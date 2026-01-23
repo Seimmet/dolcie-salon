@@ -4,11 +4,23 @@
 
 const envUrl = import.meta.env.VITE_API_URL;
 
-// If VITE_API_URL is set, ensure it ends with /api (unless it already does)
-// If not set, default to /api (for local development proxy)
-export const API_BASE_URL = envUrl 
-  ? (envUrl.endsWith('/api') ? envUrl : `${envUrl}/api`)
-  : '/api';
+// If VITE_API_URL is set, ensure it has protocol and ends with /api
+const getApiUrl = () => {
+  if (!envUrl) return '/api';
+  
+  let url = envUrl;
+  if (!url.startsWith('http')) {
+    url = `https://${url}`;
+  }
+  
+  if (!url.endsWith('/api')) {
+    url = `${url}/api`;
+  }
+  
+  return url;
+};
+
+export const API_BASE_URL = getApiUrl();
 
 export const SALON_INFO = {
   name: "Victoria Braids & Weaves",
