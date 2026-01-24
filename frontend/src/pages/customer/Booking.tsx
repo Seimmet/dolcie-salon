@@ -1165,8 +1165,8 @@ export default function Booking() {
               </p>
           </div>
           <div className="pt-6">
-              <Button onClick={() => navigate('/dashboard')} className="w-full">
-                  Go to Dashboard
+              <Button onClick={() => navigate('/')} className="w-full">
+                  Return to Home
               </Button>
           </div>
       </div>

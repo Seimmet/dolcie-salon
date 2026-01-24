@@ -26,7 +26,7 @@ import {
 import { User } from "@/services/authService";
 import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { settingsService } from "@/services/settingsService";
+import { useSettings } from "@/contexts/SettingsContext";
 
 interface DashboardSidebarProps {
   user: User;
@@ -34,23 +34,20 @@ interface DashboardSidebarProps {
 
 export function DashboardSidebar({ user }: DashboardSidebarProps) {
   const location = useLocation();
+  const { settings } = useSettings();
   const [logoUrl, setLogoUrl] = useState<string | undefined>(undefined);
   const [salonName, setSalonName] = useState<string>("Victoria Braids");
-
+  
   useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const data = await settingsService.getSettings();
-        setLogoUrl(data.logoUrl);
-        if (data.salonName) {
-           setSalonName(data.salonName);
-        }
-      } catch (error) {
-        console.error("Failed to fetch settings for sidebar", error);
+    if (settings) {
+      setLogoUrl(settings.logoUrl);
+      if (settings.salonName) {
+        setSalonName(settings.salonName);
       }
-    };
-    fetchSettings();
-  }, []);
+    }
+  }, [settings]);
+
+  const customerModuleEnabled = settings?.customerModuleEnabled ?? true;
 
   const adminItems = [
     { title: "Overview", url: "/admin", icon: LayoutDashboard },
@@ -82,7 +79,12 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
   ];
 
   let items = customerItems;
-  if (user.role === "admin") items = adminItems;
+  if (user.role === "admin") {
+    items = adminItems;
+    if (!customerModuleEnabled) {
+      items = items.filter(item => item.title !== "Customers");
+    }
+  }
   if (user.role === "stylist") items = stylistItems;
 
   return (

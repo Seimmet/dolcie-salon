@@ -21,6 +21,7 @@ export interface SalonSettings {
   depositAmount: number | string;
   notificationsEnabled: boolean;
   requireApproval?: boolean;
+  customerModuleEnabled?: boolean;
   showFaqSection?: boolean;
   courtesyNotice?: string;
   logoUrl?: string;

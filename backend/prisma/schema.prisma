@@ -142,6 +142,7 @@ model SalonSettings {
   depositAmount        Decimal  @default(50.00) @map("deposit_amount") @db.Decimal(10, 2)
   notificationsEnabled Boolean  @default(true) @map("notifications_enabled")
   requireApproval      Boolean  @default(true) @map("require_approval")
+  customerModuleEnabled Boolean @default(true) @map("customer_module_enabled")
   showFaqSection       Boolean  @default(true) @map("show_faq_section")
   courtesyNotice       String?  @db.Text @map("courtesy_notice")
   updatedAt            DateTime @default(now()) @updatedAt @map("updated_at")

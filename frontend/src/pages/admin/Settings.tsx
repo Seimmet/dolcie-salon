@@ -18,8 +18,10 @@ import { settingsService, BusinessHours } from "@/services/settingsService";
 import { bookingPolicyService } from "@/services/bookingPolicyService";
 import GallerySettings from "./settings/GallerySettings";
 import { PromoSettings } from "@/components/admin/PromoSettings";
+import { useSettings } from "@/contexts/SettingsContext";
 
 export default function Settings() {
+  const { settings, updateSettings: updateContextSettings } = useSettings();
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [salonName, setSalonName] = useState("");
@@ -29,6 +31,7 @@ export default function Settings() {
   const [depositAmount, setDepositAmount] = useState("50");
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [requireApproval, setRequireApproval] = useState(true);
+  const [customerModuleEnabled, setCustomerModuleEnabled] = useState(true);
   const [logoUrl, setLogoUrl] = useState<string | undefined>(undefined);
   const [policyContent, setPolicyContent] = useState("");
   const [courtesyNotice, setCourtesyNotice] = useState("");
@@ -43,9 +46,30 @@ export default function Settings() {
   });
 
   useEffect(() => {
-    fetchSettings();
+    if (settings) {
+        populateSettings(settings);
+    } else {
+        fetchSettings();
+    }
     fetchPolicy();
-  }, []);
+  }, [settings]);
+
+  const populateSettings = (data: any) => {
+      setSalonName(data.salonName || "");
+      setAddress(data.address || "");
+      setPhone(data.phone || "");
+      setEmail(data.email || "");
+      setDepositAmount(data.depositAmount?.toString() || "50");
+      setNotificationsEnabled(!!data.notificationsEnabled);
+      setRequireApproval(data.requireApproval ?? true);
+      setCustomerModuleEnabled(data.customerModuleEnabled ?? true);
+      setLogoUrl(data.logoUrl);
+      setCourtesyNotice(data.courtesyNotice || "");
+      if (data.businessHours) {
+        setBusinessHours(data.businessHours);
+      }
+      setLoading(false);
+  };
 
   const fetchPolicy = async () => {
     try {
@@ -63,19 +87,7 @@ export default function Settings() {
     try {
       const data = await settingsService.getSettings();
       if (!data) return;
-      
-      setSalonName(data.salonName || "");
-      setAddress(data.address || "");
-      setPhone(data.phone || "");
-      setEmail(data.email || "");
-      setDepositAmount(data.depositAmount?.toString() || "50");
-      setNotificationsEnabled(!!data.notificationsEnabled);
-      setRequireApproval(data.requireApproval ?? true);
-      setLogoUrl(data.logoUrl);
-      setCourtesyNotice(data.courtesyNotice || "");
-      if (data.businessHours) {
-        setBusinessHours(data.businessHours);
-      }
+      populateSettings(data);
     } catch (error) {
       console.error(error);
       toast.error("Failed to load settings");
@@ -91,6 +103,8 @@ export default function Settings() {
     try {
       const result = await settingsService.uploadLogo(file);
       setLogoUrl(result.logoUrl);
+      // Update context as well
+      await updateContextSettings({ logoUrl: result.logoUrl });
       toast.success("Logo uploaded successfully");
     } catch (error) {
       console.error(error);
@@ -101,7 +115,7 @@ export default function Settings() {
   const handleSave = async () => {
     setIsSubmitting(true);
     try {
-      await settingsService.updateSettings({
+      const newSettings = {
         salonName,
         address,
         phone,
@@ -109,9 +123,13 @@ export default function Settings() {
         depositAmount: parseFloat(depositAmount),
         notificationsEnabled,
         requireApproval,
+        customerModuleEnabled,
         businessHours,
         courtesyNotice,
-      });
+      };
+      
+      await updateContextSettings(newSettings);
+      
       toast.success("Settings saved successfully");
     } catch (error) {
       console.error(error);
@@ -233,18 +251,40 @@ export default function Settings() {
                   />
                 </div>
               </div>
-              <Button onClick={handleSave} className="bg-gold hover:bg-gold-dark text-white" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  "Save Changes"
-                )}
-              </Button>
             </CardContent>
           </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Feature Toggles</CardTitle>
+              <CardDescription>Enable or disable specific system modules.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label className="text-base">Customer Module</Label>
+                  <p className="text-sm text-muted-foreground">Enable the customer management dashboard and visibility.</p>
+                </div>
+                <Switch
+                  checked={customerModuleEnabled}
+                  onCheckedChange={setCustomerModuleEnabled}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="flex justify-end pt-4">
+            <Button onClick={handleSave} className="bg-gold hover:bg-gold-dark text-white w-full sm:w-auto" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
+          </div>
         </TabsContent>
 
         {/* Business Hours */}
