@@ -68,9 +68,8 @@ export default function Booking() {
   const [selectedStylistId, setSelectedStylistId] = useState<string>('');
 
   // --- Step 2: Time State ---
-  const [weekStart, setWeekStart] = useState<Date>(startOfDay(new Date()));
   const [weeklyAvailability, setWeeklyAvailability] = useState<Record<string, TimeSlot[]>>({});
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(startOfDay(new Date()));
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
 
   // --- Step 3: Details State ---
@@ -261,33 +260,39 @@ export default function Booking() {
   useEffect(() => {
     if (!isLoggedIn) return;
     const user = authService.getCurrentUser();
-    const initialConsent = user?.notificationConsent ?? true;
-    setAuthSmsConsent(initialConsent);
-    setGuestDetails(prev => ({ ...prev, smsConsent: initialConsent }));
+    if (user) {
+      const initialConsent = user.notificationConsent ?? true;
+      setAuthSmsConsent(initialConsent);
+      setGuestDetails(prev => ({ 
+        ...prev, 
+        fullName: user.fullName || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        address: user.address || '',
+        smsConsent: initialConsent 
+      }));
+    }
   }, [isLoggedIn]);
 
   // --- Fetch Availability (Step 3) ---
   useEffect(() => {
-    if (step === 4 && selectedStyleId && selectedCategoryId) {
-      const fetchWeeklyAvailability = async () => {
+    if (step === 4 && selectedStyleId && selectedCategoryId && selectedDate) {
+      const fetchAvailability = async () => {
         setLoading(true);
         try {
-          const endDate = addDays(weekStart, 6);
-          const startStr = format(weekStart, 'yyyy-MM-dd');
-          const endStr = format(endDate, 'yyyy-MM-dd');
+          const dateStr = format(selectedDate, 'yyyy-MM-dd');
           
           // Get duration from selected pricing
           const duration = selectedPricing?.durationMinutes || 60;
 
-          const data = await bookingService.getWeeklyAvailability(
-            startStr,
-            endStr,
+          const slots = await bookingService.getAvailability(
+            dateStr,
             selectedStyleId,
             selectedCategoryId,
             selectedStylistId || undefined,
             duration
           );
-          setWeeklyAvailability(data);
+          setWeeklyAvailability({ [dateStr]: slots });
         } catch (error) {
           console.error(error);
           toast({
@@ -299,9 +304,9 @@ export default function Booking() {
           setLoading(false);
         }
       };
-      fetchWeeklyAvailability();
+      fetchAvailability();
     }
-  }, [step, weekStart, selectedStyleId, selectedCategoryId, selectedStylistId]);
+  }, [step, selectedDate, selectedStyleId, selectedCategoryId, selectedStylistId]);
 
   // --- Handlers ---
 
@@ -374,6 +379,9 @@ export default function Booking() {
   };
 
   const handleBack = () => {
+    if (step === 6) {
+        setClientSecret(null);
+    }
     if (step > 1) {
         setStep(step - 1);
     }
@@ -412,7 +420,7 @@ export default function Booking() {
     setLoading(true);
     setPaymentError(null);
     try {
-      const data = await bookingService.createPaymentIntent(TOTAL_DEPOSIT_CENTS);
+      const data = await bookingService.createPaymentIntent(TOTAL_DEPOSIT_CENTS, guestDetails);
       if (data.clientSecret) {
         setClientSecret(data.clientSecret);
       } else {
@@ -425,7 +433,7 @@ export default function Booking() {
     } finally {
       setLoading(false);
     }
-  }, [toast, TOTAL_DEPOSIT_CENTS]);
+  }, [toast, TOTAL_DEPOSIT_CENTS, guestDetails]);
 
   useEffect(() => {
     if (step === 6 && !clientSecret) {
@@ -862,7 +870,7 @@ export default function Booking() {
                 onSelect={(date) => {
                     if (date) {
                         setSelectedDate(date);
-                        setWeekStart(startOfDay(date)); // Align week view to selected date
+                        setSelectedTime(null);
                     }
                 }}
                 className="rounded-md border shadow-sm mx-auto bg-card"
@@ -872,73 +880,66 @@ export default function Booking() {
          
          {/* Time Slots Column */}
          <div className="flex-1 min-w-0">
-            <div className="flex justify-between items-center mb-4">
-                 <Button variant="outline" size="sm" onClick={() => setWeekStart(d => addDays(d, -7))} disabled={weekStart <= startOfDay(new Date())}>
-                    <ChevronLeft className="h-4 w-4" />
-                 </Button>
-                 <h3 className="font-semibold text-lg">
-                    {format(weekStart, 'MMM d')} - {format(addDays(weekStart, 6), 'MMM d, yyyy')}
-                 </h3>
-                 <Button variant="outline" size="sm" onClick={() => setWeekStart(d => addDays(d, 7))}>
-                    <ChevronRight className="h-4 w-4" />
-                 </Button>
-            </div>
+            {selectedDate ? (
+                <>
+                    <div className="mb-4">
+                         <h3 className="font-semibold text-lg">
+                            Availability for {format(selectedDate, 'MMMM d, yyyy')}
+                         </h3>
+                    </div>
 
-            {loading ? (
-                <div className="h-64 flex items-center justify-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
+                    {loading ? (
+                        <div className="h-64 flex items-center justify-center">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                            {(() => {
+                                const dateStr = format(selectedDate, 'yyyy-MM-dd');
+                                const rawSlots = weeklyAvailability[dateStr] || [];
+                                
+                                // Filter out past time slots if the date is today
+                                const now = new Date();
+                                const isToday = isSameDay(selectedDate, now);
+                                const slots = rawSlots.filter(slot => {
+                                    if (!isToday) return true;
+                                    
+                                    const [hours, minutes] = slot.time.split(':').map(Number);
+                                    const slotTime = new Date(selectedDate);
+                                    slotTime.setHours(hours, minutes, 0, 0);
+                                    
+                                    return slotTime > now;
+                                });
+
+                                if (slots.length === 0) {
+                                    return (
+                                        <div className="col-span-full text-center text-muted-foreground py-8 border rounded-md border-dashed">
+                                            No available slots for this date.
+                                        </div>
+                                    );
+                                }
+
+                                return slots.map((slot) => (
+                                    <Button
+                                        key={`${dateStr}-${slot.time}`}
+                                        variant={selectedTime === slot.time ? "default" : "outline"}
+                                        className={cn(
+                                            "w-full h-10",
+                                            !slot.available && "opacity-50 cursor-not-allowed bg-muted"
+                                        )}
+                                        disabled={!slot.available}
+                                        onClick={() => handleTimeSelect(selectedDate, slot.time)}
+                                    >
+                                        {formatTimeDisplay(slot.time)}
+                                    </Button>
+                                ));
+                            })()}
+                        </div>
+                    )}
+                </>
             ) : (
-                <div className="grid grid-cols-7 gap-2 overflow-x-auto pb-4">
-                    {[0, 1, 2, 3, 4, 5, 6].map((offset) => {
-                        const date = addDays(weekStart, offset);
-                        const dateStr = format(date, 'yyyy-MM-dd');
-                        const rawSlots = weeklyAvailability[dateStr] || [];
-                        const isSelectedDate = selectedDate && isSameDay(date, selectedDate);
-
-                        // Filter out past time slots if the date is today
-                        const now = new Date();
-                        const isToday = isSameDay(date, now);
-                        const slots = rawSlots.filter(slot => {
-                            if (!isToday) return true;
-                            
-                            const [hours, minutes] = slot.time.split(':').map(Number);
-                            const slotTime = new Date(date);
-                            slotTime.setHours(hours, minutes, 0, 0);
-                            
-                            return slotTime > now;
-                        });
-
-                        return (
-                            <div key={dateStr} className="min-w-[60px] flex flex-col gap-2">
-                                <div className={cn(
-                                    "text-center p-2 rounded-md transition-colors",
-                                    isSelectedDate ? "bg-primary/10 font-bold" : ""
-                                )}>
-                                    <div className="text-xs text-muted-foreground uppercase">{format(date, 'EEE')}</div>
-                                    <div className="text-sm">{format(date, 'd')}</div>
-                                </div>
-                                <div className="space-y-2">
-                                    {slots.length > 0 ? slots.map((slot) => (
-                                        <Button
-                                            key={`${dateStr}-${slot.time}`}
-                                            variant={selectedTime === slot.time && isSelectedDate ? "default" : "outline"}
-                                            className={cn(
-                                                "w-full h-8 text-xs px-1",
-                                                !slot.available && "opacity-50 cursor-not-allowed bg-muted"
-                                            )}
-                                            disabled={!slot.available}
-                                            onClick={() => handleTimeSelect(date, slot.time)}
-                                        >
-                                            {formatTimeDisplay(slot.time)}
-                                        </Button>
-                                    )) : (
-                                        <div className="text-xs text-center text-muted-foreground py-4">-</div>
-                                    )}
-                                </div>
-                            </div>
-                        );
-                    })}
+                <div className="h-full flex items-center justify-center text-muted-foreground border rounded-md border-dashed p-12">
+                    Select a date to view availability
                 </div>
             )}
          </div>

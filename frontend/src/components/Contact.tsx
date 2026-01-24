@@ -153,7 +153,7 @@ const Contact = () => {
             Book your appointment online and let our expert stylists create the perfect look for you. Walk-ins welcome, but appointments are recommended to ensure availability.
           </p>
           <p className="font-sans text-primary font-semibold mb-6">
-            A $30 non-refundable deposit is required for all appointments
+            A {settings?.depositAmount ? `$${settings.depositAmount}` : '$50'} non-refundable deposit is required for all appointments
           </p>
           <Button variant="gold" size="xl" onClick={() => navigate('/booking')}>
             Book Your Appointment

@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { format, parseISO, isSameDay } from "date-fns";
+import { format, parseISO, isSameDay, isSameMonth, startOfDay } from "date-fns";
 import { DayPicker } from "react-day-picker";
-import { bookingService, Booking } from "@/services/bookingService";
+import { Calendar } from "@/components/ui/calendar";
+import { bookingService, Booking, TimeSlot } from "@/services/bookingService";
 import { stylistService } from "@/services/stylistService";
 import { authService } from "@/services/authService";
 import { loadStripe } from "@stripe/stripe-js";
@@ -314,8 +315,109 @@ function RecordPaymentDialog({ booking, onRecordPayment }: { booking: Booking; o
   );
 }
 
+function RescheduleDialog({ booking, onReschedule }: { booking: Booking; onReschedule: (date: string, time: string) => void }) {
+    const [open, setOpen] = useState(false);
+    const [date, setDate] = useState<Date | undefined>(undefined);
+    const [time, setTime] = useState<string | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [slots, setSlots] = useState<TimeSlot[]>([]);
+
+    useEffect(() => {
+        if (date && open) {
+            const fetchAvailability = async () => {
+                setLoading(true);
+                try {
+                    const dateStr = format(date, 'yyyy-MM-dd');
+                    const duration = booking.duration || 60;
+                    const availableSlots = await bookingService.getAvailability(
+                        dateStr,
+                        booking.styleId || undefined,
+                        booking.categoryId || undefined,
+                        booking.stylistId || undefined,
+                        duration
+                    );
+                    setSlots(availableSlots);
+                } catch (error) {
+                    console.error(error);
+                    toast.error("Failed to load availability");
+                } finally {
+                    setLoading(false);
+                }
+            };
+            fetchAvailability();
+        } else {
+            setSlots([]);
+        }
+    }, [date, open, booking]);
+
+    const handleConfirm = () => {
+        if (date && time) {
+            const dateStr = format(date, 'yyyy-MM-dd');
+            onReschedule(dateStr, time);
+            setOpen(false);
+        }
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+                <Button size="sm" variant="outline">Reschedule</Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                    <DialogTitle>Reschedule Appointment</DialogTitle>
+                    <DialogDescription>
+                        Select a new date and time for {booking.customer.fullName}.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <div className="flex justify-center">
+                        <Calendar
+                            mode="single"
+                            selected={date}
+                            onSelect={(d) => { setDate(d); setTime(null); }}
+                            disabled={(d) => d < startOfDay(new Date())}
+                            className="rounded-md border shadow-sm"
+                        />
+                    </div>
+                    {date && (
+                        <div className="space-y-2">
+                             <h4 className="font-medium text-sm">Available Times ({format(date, 'MMM d')})</h4>
+                             {loading ? (
+                                 <div className="flex justify-center py-4"><Loader2 className="h-4 w-4 animate-spin" /></div>
+                             ) : slots.length === 0 ? (
+                                 <div className="text-center text-sm text-muted-foreground">No available slots for this date.</div>
+                             ) : (
+                                 <div className="grid grid-cols-3 gap-2 max-h-[200px] overflow-y-auto">
+                                     {slots.map((slot) => (
+                                         <Button
+                                             key={slot.time}
+                                             variant={time === slot.time ? "default" : "outline"}
+                                             size="sm"
+                                             onClick={() => setTime(slot.time)}
+                                             disabled={!slot.available}
+                                             className={!slot.available ? "opacity-50 cursor-not-allowed" : ""}
+                                         >
+                                             {format(parseISO(`2000-01-01T${slot.time}`), 'h:mm a')}
+                                         </Button>
+                                     ))}
+                                 </div>
+                             )}
+                        </div>
+                    )}
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+                    <Button onClick={handleConfirm} disabled={!date || !time}>Confirm</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 export default function Bookings() {
-  const [date, setDate] = useState<Date | undefined>(new Date());
+  const [date, setDate] = useState<Date | undefined>(undefined);
+  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const queryClient = useQueryClient();
   const currentUser = authService.getCurrentUser();
   const isAdmin = currentUser?.role === 'admin';
@@ -376,10 +478,18 @@ export default function Bookings() {
       addPaymentMutation.mutate({ id: bookingId, data: { amount, method, stripePaymentId } });
   };
 
-  // Filter bookings for selected date
-  const selectedDateBookings = bookings.filter((booking) =>
-    date ? isSameDay(parseISO(booking.bookingDate), date) : false
-  );
+  const handleReschedule = (bookingId: string, date: string, time: string) => {
+      updateBookingMutation.mutate({ id: bookingId, data: { date, time } });
+  };
+
+  // Filter bookings for selected date or current month
+  const selectedDateBookings = bookings.filter((booking) => {
+    const bookingDate = parseISO(booking.bookingDate);
+    if (date) {
+        return isSameDay(bookingDate, date);
+    }
+    return isSameMonth(bookingDate, currentMonth);
+  });
   
   // Sort by time
   selectedDateBookings.sort((a, b) => new Date(a.bookingTime).getTime() - new Date(b.bookingTime).getTime());
@@ -430,6 +540,8 @@ export default function Bookings() {
                 mode="single"
                 selected={date}
                 onSelect={setDate}
+                month={currentMonth}
+                onMonthChange={setCurrentMonth}
                 className="p-3 w-full flex justify-center"
                 modifiers={{
                     booked: bookedDays
@@ -462,7 +574,7 @@ export default function Bookings() {
         <div className="md:col-span-8 lg:col-span-9 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-xl font-semibold">
-              {date ? format(date, "MMMM d, yyyy") : "Select a date"}
+              {date ? format(date, "MMMM d, yyyy") : `All Bookings in ${format(currentMonth, "MMMM yyyy")}`}
             </h3>
             <Badge variant="outline" className="text-base">
               {selectedDateBookings.length} Bookings
@@ -473,7 +585,7 @@ export default function Bookings() {
             <Card className="bg-muted/50 border-dashed">
               <CardContent className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
                 <CalendarIcon className="h-12 w-12 mb-4 opacity-50" />
-                <p>No bookings found for this date.</p>
+                <p>No bookings found for {date ? "this date" : "this month"}.</p>
               </CardContent>
             </Card>
           ) : (
@@ -483,6 +595,11 @@ export default function Bookings() {
                   <div className="flex flex-col md:flex-row md:items-center">
                     {/* Time & Status Strip */}
                     <div className={`p-4 md:w-48 flex flex-col justify-center items-center md:items-start border-b md:border-b-0 md:border-r bg-muted/30`}>
+                      {!date && (
+                        <span className="text-sm font-medium text-muted-foreground mb-1">
+                            {format(parseISO(booking.bookingDate), "MMM d")}
+                        </span>
+                      )}
                       <span className="text-2xl font-bold">
                         {format(parseISO(booking.bookingTime), "h:mm a")}
                       </span>
@@ -601,27 +718,33 @@ export default function Bookings() {
                            )}
                            
                            {booking.status !== 'cancelled' && booking.status !== 'completed' && (
-                               <AlertDialog>
-                                 <AlertDialogTrigger asChild>
-                                   <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-600 hover:bg-red-50">
-                                       Cancel
-                                   </Button>
-                                 </AlertDialogTrigger>
-                                 <AlertDialogContent>
-                                   <AlertDialogHeader>
-                                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                     <AlertDialogDescription>
-                                       This action will cancel the booking. This cannot be easily undone.
-                                     </AlertDialogDescription>
-                                   </AlertDialogHeader>
-                                   <AlertDialogFooter>
-                                     <AlertDialogCancel>Dismiss</AlertDialogCancel>
-                                     <AlertDialogAction onClick={() => handleStatusChange(booking.id, 'cancelled')} className="bg-red-600 hover:bg-red-700">
-                                       Yes, Cancel Booking
-                                     </AlertDialogAction>
-                                   </AlertDialogFooter>
-                                 </AlertDialogContent>
-                               </AlertDialog>
+                               <>
+                                 <RescheduleDialog 
+                                     booking={booking} 
+                                     onReschedule={(date, time) => handleReschedule(booking.id, date, time)} 
+                                 />
+                                 <AlertDialog>
+                                   <AlertDialogTrigger asChild>
+                                     <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-600 hover:bg-red-50">
+                                         Cancel
+                                     </Button>
+                                   </AlertDialogTrigger>
+                                   <AlertDialogContent>
+                                     <AlertDialogHeader>
+                                       <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                       <AlertDialogDescription>
+                                         This action will cancel the booking. This cannot be easily undone.
+                                       </AlertDialogDescription>
+                                     </AlertDialogHeader>
+                                     <AlertDialogFooter>
+                                       <AlertDialogCancel>Dismiss</AlertDialogCancel>
+                                       <AlertDialogAction onClick={() => handleStatusChange(booking.id, 'cancelled')} className="bg-red-600 hover:bg-red-700">
+                                         Yes, Cancel Booking
+                                       </AlertDialogAction>
+                                     </AlertDialogFooter>
+                                   </AlertDialogContent>
+                                 </AlertDialog>
+                               </>
                            )}
 
                            {booking.status === 'cancelled' && (

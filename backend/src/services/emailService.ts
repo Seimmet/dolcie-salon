@@ -68,6 +68,10 @@ export const emailService = {
       console.warn('Failed to fetch template guest_credentials_email', e);
     }
 
+    // Get deposit amount
+    const settings = await prisma.salonSettings.findFirst();
+    const depositAmount = settings?.depositAmount ? `$${settings.depositAmount}` : '$50';
+
     // Fallback
     const subject = 'Your Account Credentials - Victoria Braids & Weaves';
     const html = `
@@ -80,7 +84,7 @@ export const emailService = {
           <p style="margin: 10px 0 0;"><strong>Password:</strong> ${password}</p>
         </div>
         <p>You can log in to your dashboard to view your appointment details.</p>
-        <p>Please pay the $50 booking fee upon arrival for your appointment.</p>
+        <p>Please pay the ${depositAmount} booking fee upon arrival for your appointment.</p>
         <p>Best regards,<br>Victoria Braids Team</p>
       </div>
     `;
@@ -99,14 +103,22 @@ export const emailService = {
       });
 
       if (template && template.isActive) {
+        // Get deposit amount for template variable
+        const settings = await prisma.salonSettings.findFirst();
+        const depositAmount = settings?.depositAmount ? `$${settings.depositAmount}` : '$50';
+
         return {
           subject: template.subject || 'Appointment Confirmation - Victoria Braids & Weaves',
-          html: replaceVariables(template.content, { name, serviceName, date, time })
+          html: replaceVariables(template.content, { name, serviceName, date, time, depositAmount })
         };
       }
     } catch (e) {
       console.warn(`Failed to fetch template ${templateName}`, e);
     }
+
+    // Get deposit amount
+    const settings = await prisma.salonSettings.findFirst();
+    const depositAmount = settings?.depositAmount ? `$${settings.depositAmount}` : '$50';
 
     // Fallback
     const subject = 'Appointment Confirmation - Victoria Braids & Weaves';
@@ -119,7 +131,7 @@ export const emailService = {
           <p style="margin: 0;"><strong>Date:</strong> ${date}</p>
           <p style="margin: 10px 0 0;"><strong>Time:</strong> ${time}</p>
         </div>
-        <p>Please remember to pay the <strong>$50 booking fee</strong> upon arrival to confirm your slot.</p>
+        <p>Please remember to pay the <strong>${depositAmount} booking fee</strong> upon arrival to confirm your slot.</p>
         <p>We look forward to seeing you!</p>
         <p>Best regards,<br>Victoria Braids Team</p>
       </div>

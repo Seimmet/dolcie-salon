@@ -4,11 +4,13 @@ import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recha
 import { Calendar, DollarSign, Users, Scissors, TrendingUp, Clock } from "lucide-react";
 import { authService, User } from "@/services/authService";
 import { getDashboardStats, getRevenueStats } from "@/services/reportsService";
+import { useSettings } from "@/contexts/SettingsContext";
 import styleBohoLocs from '@/assets/style-boho-locs.jpg';
 import styleBoxBraids from '@/assets/style-box-braids.jpg';
 import styleCornrows from '@/assets/style-cornrows.jpg';
 
 const Overview = () => {
+  const { settings } = useSettings();
   const [user, setUser] = useState<User | null>(null);
   const [stats, setStats] = useState<any>(null);
   const [revenueData, setRevenueData] = useState<any[]>([]);
@@ -155,7 +157,9 @@ const Overview = () => {
                         <p className="text-sm font-medium leading-none">Booking Cancelled</p>
                         <p className="text-sm text-muted-foreground">Refund processed for ID #4291</p>
                       </div>
-                      <div className="ml-auto font-medium text-red-500">- $50.00</div>
+                      <div className="ml-auto font-medium text-red-500">
+                        - ${settings?.depositAmount ? Number(settings.depositAmount).toFixed(2) : "50.00"}
+                      </div>
                     </div>
                   </div>
                 </CardContent>

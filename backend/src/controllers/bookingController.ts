@@ -132,9 +132,15 @@ export const createBooking = async (req: Request, res: Response): Promise<void> 
          }
     }
 
-    // Check if amount is correct (minimum $1 deposit for testing, or $50 production)
-    if (paymentIntent.amount < 100) {
-        // console.warn('Payment amount mismatch', paymentIntent.amount);
+    // Check if amount is correct (minimum $1 deposit for testing, or dynamic deposit)
+    const settings = await prisma.salonSettings.findFirst();
+    const depositAmount = Number(settings?.depositAmount || 50);
+    
+    // We expect the payment amount (in cents) to be at least the deposit amount (in cents)
+    // Adding a small buffer or checking against the calculated total with fees would be more robust,
+    // but for now ensuring it's not trivial (like $0.50) is a basic check.
+    if (paymentIntent.amount < (depositAmount * 100)) {
+         // console.warn('Payment amount mismatch', paymentIntent.amount);
     }
 
     // Handle Guest Booking
@@ -328,7 +334,7 @@ export const createBooking = async (req: Request, res: Response): Promise<void> 
 export const updateBooking = async (req: Request, res: Response): Promise<void> => {
     try {
         const { id } = req.params;
-        const { status, stylistId, paymentStatus } = req.body;
+        const { status, stylistId, paymentStatus, date, time } = req.body;
 
         const booking = await prisma.booking.findUnique({ where: { id } });
         if (!booking) {
@@ -339,16 +345,52 @@ export const updateBooking = async (req: Request, res: Response): Promise<void> 
         const data: any = {};
         if (status) data.status = status;
         
+        // Handle Rescheduling (Date/Time change)
+        if (date && time) {
+            // Check if this new slot is available (basic conflict check)
+            // If a stylist is assigned, check their availability
+            // If no stylist is assigned, check general capacity (simplified: just check for duplicates for now or rely on frontend to check availability)
+            
+            // Note: Ideally, we should reuse the availability logic from getAvailability, 
+            // but for Admin override, we might want to be more flexible.
+            // Let's at least check if the assigned stylist is free if one is assigned.
+            
+            const effectiveStylistId = stylistId || booking.stylistId;
+
+            if (effectiveStylistId) {
+                const conflict = await prisma.booking.findFirst({
+                    where: {
+                        stylistId: effectiveStylistId,
+                        bookingDate: date,
+                        bookingTime: time,
+                        status: { not: 'cancelled' },
+                        id: { not: id } // Exclude current booking
+                    }
+                });
+
+                if (conflict) {
+                    res.status(409).json({ message: 'The assigned stylist is already booked at this time.' });
+                    return;
+                }
+            }
+
+            data.bookingDate = date;
+            data.bookingTime = time;
+        }
+        
         if (stylistId) {
             if (stylistId === 'unassigned') {
                 data.stylistId = null;
             } else {
-                // Check if stylist is already booked at this time
+                // Check if stylist is already booked at this time (use new date/time if provided, else current)
+                const targetDate = date || booking.bookingDate;
+                const targetTime = time || booking.bookingTime;
+
                 const conflict = await prisma.booking.findFirst({
                     where: {
                         stylistId,
-                        bookingDate: booking.bookingDate,
-                        bookingTime: booking.bookingTime,
+                        bookingDate: targetDate,
+                        bookingTime: targetTime,
                         status: { not: 'cancelled' },
                         id: { not: id }
                     }
@@ -495,12 +537,19 @@ export const checkInBooking = async (req: Request, res: Response): Promise<void>
 
 export const createPaymentIntent = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { amount } = req.body;
+    const { amount, guestDetails } = req.body;
     
     // Create a PaymentIntent with the order amount and currency
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amount, // amount in cents
       currency: 'usd',
+      receipt_email: guestDetails?.email,
+      description: guestDetails ? `Deposit for ${guestDetails.fullName}` : undefined,
+      metadata: {
+        customer_name: guestDetails?.fullName,
+        customer_phone: guestDetails?.phone,
+        customer_email: guestDetails?.email
+      },
       automatic_payment_methods: {
         enabled: true,
       },

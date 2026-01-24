@@ -23,15 +23,6 @@ const openai = apiKey
     })
   : null;
 
-const POLICIES = `
-1. BOOKING POLICY: A $50 non-refundable Booking Scheduling Fee is required to confirm appointments. This fee is SEPARATE and is NOT deducted from the final service price.
-2. CANCELLATIONS: Cancellations must be made at least 24 hours in advance.
-3. LATE ARRIVAL: A 15-minute grace period is allowed. After that, the appointment may be cancelled or a late fee may apply.
-4. PAYMENTS: We accept cash, credit cards, and Stripe payments.
-5. LOCATION: We are located at Victoria Braids & Weaves, [Insert Address Here].
-6. HOURS: Monday - Saturday, 10:00 AM - 4:00 PM. Closed on Sundays.
-`;
-
 export const getSystemPrompt = async () => {
   // Fetch pricing with Style and Category names
   const pricing = await prisma.stylePricing.findMany({
@@ -43,6 +34,18 @@ export const getSystemPrompt = async () => {
           style: { name: 'asc' }
       }
   });
+
+  const settings = await prisma.salonSettings.findFirst();
+  const depositAmount = settings?.depositAmount ? `$${settings.depositAmount}` : '$50';
+
+  const POLICIES = `
+1. BOOKING POLICY: A ${depositAmount} non-refundable Booking Scheduling Fee is required to confirm appointments. This fee is SEPARATE and is NOT deducted from the final service price.
+2. CANCELLATIONS: Cancellations must be made at least 24 hours in advance.
+3. LATE ARRIVAL: A 15-minute grace period is allowed. After that, the appointment may be cancelled or a late fee may apply.
+4. PAYMENTS: We accept cash, credit cards, and Stripe payments.
+5. LOCATION: We are located at Victoria Braids & Weaves, [Insert Address Here].
+6. HOURS: Monday - Saturday, 10:00 AM - 4:00 PM. Closed on Sundays.
+`;
 
   const servicesText = pricing.map(p => {
       return `- ${p.style.name} (${p.category.name}): $${p.price}`;

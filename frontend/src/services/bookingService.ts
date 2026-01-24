@@ -62,6 +62,8 @@ export interface Booking {
     };
   };
   stylistId?: string | null;
+  categoryId?: string;
+  duration?: number;
   bookingDate: string;
   bookingTime: string;
   payments: Payment[];
@@ -138,7 +140,7 @@ export const bookingService = {
      return response.json();
   },
 
-  async createPaymentIntent(amount: number): Promise<{ clientSecret: string, id: string }> {
+  async createPaymentIntent(amount: number, guestDetails?: any): Promise<{ clientSecret: string, id: string }> {
       const token = authService.getToken();
       const headers: any = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -146,7 +148,7 @@ export const bookingService = {
       const response = await fetch(`${API_URL}/bookings/create-payment-intent`, {
           method: 'POST',
           headers,
-          body: JSON.stringify({ amount })
+          body: JSON.stringify({ amount, guestDetails })
       });
 
       if (!response.ok) {
@@ -157,7 +159,7 @@ export const bookingService = {
   },
 
 
-  async updateBooking(id: string, data: { status?: string; stylistId?: string; paymentStatus?: string }): Promise<Booking> {
+  async updateBooking(id: string, data: { status?: string; stylistId?: string; paymentStatus?: string; date?: string; time?: string }): Promise<Booking> {
       const token = authService.getToken();
       const response = await fetch(`${API_URL}/bookings/${id}`, {
           method: 'PATCH',

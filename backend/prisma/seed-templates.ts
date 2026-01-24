@@ -18,31 +18,27 @@ const templates = [
           <p style="margin: 10px 0 0;"><strong>Password:</strong> {password}</p>
         </div>
         <p>You can log in to your dashboard to view your appointment details.</p>
-        <p>Please pay the $50 booking fee upon arrival for your appointment.</p>
+        <p>Please pay the {depositAmount} booking fee upon arrival for your appointment.</p>
         <p>Best regards,<br>Victoria Braids Team</p>
       </div>
     `,
-    variables: ['name', 'email', 'password']
+    variables: ['name', 'email', 'password', 'depositAmount']
   },
   {
-    name: 'booking_confirmation_email_guest',
+    name: 'booking_confirmation_email',
     type: NotificationType.EMAIL,
-    subject: 'Appointment Confirmation - Victoria Braids & Weaves',
+    subject: 'Booking Confirmation - Victoria Braids & Weaves',
     content: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #333;">Appointment Confirmed!</h2>
+        <h2 style="color: #333;">Booking Confirmed!</h2>
         <p>Hi {name},</p>
-        <p>Your appointment for <strong>{serviceName}</strong> has been scheduled.</p>
-        <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
-          <p style="margin: 0;"><strong>Date:</strong> {date}</p>
-          <p style="margin: 10px 0 0;"><strong>Time:</strong> {time}</p>
-        </div>
-        <p>Please remember to pay the <strong>$50 booking fee</strong> upon arrival to confirm your slot.</p>
+        <p>Your appointment for <strong>{service}</strong> on <strong>{date} at {time}</strong> has been confirmed.</p>
+        <p>Please pay the {depositAmount} booking fee upon arrival for your appointment.</p>
         <p>We look forward to seeing you!</p>
         <p>Best regards,<br>Victoria Braids Team</p>
       </div>
     `,
-    variables: ['name', 'serviceName', 'date', 'time']
+    variables: ['name', 'serviceName', 'date', 'time', 'depositAmount']
   },
   {
     name: 'booking_confirmation_email_user',
@@ -57,12 +53,12 @@ const templates = [
           <p style="margin: 0;"><strong>Date:</strong> {date}</p>
           <p style="margin: 10px 0 0;"><strong>Time:</strong> {time}</p>
         </div>
-        <p>Your booking fee has been received.</p>
+        <p>Your {depositAmount} booking fee has been received.</p>
         <p>We look forward to seeing you!</p>
         <p>Best regards,<br>Victoria Braids Team</p>
       </div>
     `,
-    variables: ['name', 'serviceName', 'date', 'time']
+    variables: ['name', 'serviceName', 'date', 'time', 'depositAmount']
   },
   {
     name: 'booking_completion_email',
