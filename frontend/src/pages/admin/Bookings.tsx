@@ -210,7 +210,7 @@ function RecordPaymentDialog({ booking, onRecordPayment }: { booking: Booking; o
         <DialogHeader>
           <DialogTitle>Record Payment</DialogTitle>
           <DialogDescription>
-            Record the final payment for {booking.customer.fullName}.
+            Record the final payment for {booking.customer?.fullName || 'Guest'}.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -367,7 +367,7 @@ function RescheduleDialog({ booking, onReschedule }: { booking: Booking; onResch
                 <DialogHeader>
                     <DialogTitle>Reschedule Appointment</DialogTitle>
                     <DialogDescription>
-                        Select a new date and time for {booking.customer.fullName}.
+                        Select a new date and time for {booking.customer?.fullName || 'Guest'}.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
@@ -632,10 +632,10 @@ export default function Bookings() {
                         <div className="text-sm text-muted-foreground space-y-1 mt-1">
                           <div className="flex items-center">
                             <User className="h-4 w-4 mr-2" />
-                            {booking.customer.fullName}
+                            {booking.customer?.fullName || 'Guest'}
                           </div>
-                          <div className="pl-6">{booking.customer.phone}</div>
-                          <div className="pl-6">{booking.customer.email}</div>
+                          <div className="pl-6">{booking.customer?.phone || 'No phone'}</div>
+                          <div className="pl-6">{booking.customer?.email || 'No email'}</div>
                         </div>
                         
                          {/* Payment Summary */}
