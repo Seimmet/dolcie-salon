@@ -27,6 +27,7 @@ export interface SalonSettings {
   logoUrl?: string;
   businessHours?: BusinessHours;
   updatedAt?: string;
+  timezone?: string;
 }
 
 export const settingsService = {

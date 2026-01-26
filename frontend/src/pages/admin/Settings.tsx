@@ -28,6 +28,7 @@ export default function Settings() {
   const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  const [timezone, setTimezone] = useState("UTC");
   const [depositAmount, setDepositAmount] = useState("50");
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [requireApproval, setRequireApproval] = useState(true);
@@ -46,12 +47,15 @@ export default function Settings() {
   });
 
   useEffect(() => {
-    if (settings) {
-        populateSettings(settings);
-    } else {
-        fetchSettings();
-    }
+    // Force refresh settings on mount to ensure fresh data
+    fetchSettings();
     fetchPolicy();
+  }, []); // Remove dependency on 'settings' to avoid infinite loops if context updates weirdly
+
+  useEffect(() => {
+      if (settings) {
+          populateSettings(settings);
+      }
   }, [settings]);
 
   const populateSettings = (data: any) => {
@@ -59,6 +63,7 @@ export default function Settings() {
       setAddress(data.address || "");
       setPhone(data.phone || "");
       setEmail(data.email || "");
+      setTimezone(data.timezone || "UTC");
       setDepositAmount(data.depositAmount?.toString() || "50");
       setNotificationsEnabled(!!data.notificationsEnabled);
       setRequireApproval(data.requireApproval ?? true);
@@ -120,6 +125,7 @@ export default function Settings() {
         address,
         phone,
         email,
+        timezone,
         depositAmount: parseFloat(depositAmount),
         notificationsEnabled,
         requireApproval,
@@ -250,6 +256,18 @@ export default function Settings() {
                     onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="timezone">Timezone</Label>
+                <Input
+                  id="timezone"
+                  value={timezone}
+                  onChange={(e) => setTimezone(e.target.value)}
+                  placeholder="e.g. Africa/Lagos"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Use IANA timezone format (e.g., Africa/Lagos, America/New_York).
+                </p>
               </div>
             </CardContent>
           </Card>
