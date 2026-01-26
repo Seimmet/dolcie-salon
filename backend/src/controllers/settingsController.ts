@@ -92,7 +92,13 @@ export const getSettings = async (req: Request, res: Response) => {
 
 export const updateSettings = async (req: Request, res: Response) => {
   try {
-    const { salonName, address, phone, email, depositAmount, notificationsEnabled, requireApproval, showFaqSection, businessHours, courtesyNotice, customerModuleEnabled } = req.body;
+    const { 
+      salonName, address, phone, email, 
+      depositAmount, notificationsEnabled, 
+      requireApproval, showFaqSection, 
+      businessHours, courtesyNotice, 
+      customerModuleEnabled, timezone 
+    } = req.body;
     
     const settings = await prisma.salonSettings.findFirst();
     
@@ -111,6 +117,7 @@ export const updateSettings = async (req: Request, res: Response) => {
           businessHours: businessHours || undefined,
           courtesyNotice,
           customerModuleEnabled,
+          timezone,
         },
       });
       res.json(updated);
@@ -128,6 +135,7 @@ export const updateSettings = async (req: Request, res: Response) => {
           businessHours: businessHours || DEFAULT_BUSINESS_HOURS,
           courtesyNotice,
           customerModuleEnabled: customerModuleEnabled ?? true,
+          timezone: timezone || 'UTC',
         },
       });
       res.json(newSettings);

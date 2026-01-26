@@ -226,13 +226,13 @@ export const createBooking = async (req: Request, res: Response): Promise<void> 
     }
     
     // Parse Date and Time
-    // Date string YYYY-MM-DD to Date object
-    const bookingDate = new Date(date);
-    // Time string HH:mm to Date object (Epoch + Time)
+    // Date string YYYY-MM-DD to Date object (Force UTC)
+    const bookingDate = new Date(date + 'T00:00:00Z');
+    // Time string HH:mm to Date object (Epoch + Time) - Force UTC for Floating Time
     const timeParts = time.split(':');
     const bookingTime = new Date(0); // Epoch
-    bookingTime.setHours(Number(timeParts[0]));
-    bookingTime.setMinutes(Number(timeParts[1]));
+    bookingTime.setUTCHours(Number(timeParts[0]));
+    bookingTime.setUTCMinutes(Number(timeParts[1]));
 
     // Transaction to create booking and payment record
     let result;
@@ -370,12 +370,12 @@ export const updateBooking = async (req: Request, res: Response): Promise<void> 
         
         // Handle Rescheduling (Date/Time change)
         if (date && time) {
-            // Parse Date and Time (same logic as createBooking)
-            const parsedDate = new Date(date);
+            // Parse Date and Time (same logic as createBooking - Force UTC)
+            const parsedDate = new Date(date + 'T00:00:00Z');
             const timeParts = time.split(':');
             const parsedTime = new Date(0); // Epoch
-            parsedTime.setHours(Number(timeParts[0]));
-            parsedTime.setMinutes(Number(timeParts[1]));
+            parsedTime.setUTCHours(Number(timeParts[0]));
+            parsedTime.setUTCMinutes(Number(timeParts[1]));
 
             // Check if this new slot is available (basic conflict check)
             // If a stylist is assigned, check their availability

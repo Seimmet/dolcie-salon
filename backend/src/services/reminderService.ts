@@ -13,8 +13,21 @@ export const reminderService = {
     try {
       console.log('Running reminder check...');
       
+      const settings = await prisma.salonSettings.findFirst();
+      const timeZone = settings?.timezone || 'UTC';
+
       const now = new Date();
-      const currentHour = now.getHours();
+      // Get current hour in Salon's Timezone using Intl
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone,
+        hour12: false,
+        hour: 'numeric'
+      });
+      // formatter.format(now) returns string "10" for 10 AM.
+      // However, if it's "24" it might be 0. Let's check.
+      // 'numeric' usually returns 0-23 or 1-24 depending on locale.
+      // en-US with hour12: false returns 0-23.
+      const currentHour = parseInt(formatter.format(now));
       
       // Calculate "Tomorrow"
       const tomorrow = new Date(now);
@@ -47,14 +60,10 @@ export const reminderService = {
 
       for (const booking of bookings) {
         // Check if booking time matches current hour
-        // We assume booking.bookingTime is a Date object. 
-        // We need to compare its hour with currentHour.
-        // Important: Ensure we are comparing in the same timezone context.
-        const bookingHour = booking.bookingTime.getHours();
+        // We compare the Stored Hour (which is Wall Clock Time stored as UTC)
+        // with the Current Hour (which is Wall Clock Time in Salon Timezone).
+        const bookingHour = booking.bookingTime.getUTCHours();
 
-        // Allow a window of +/- 1 hour or just strict match?
-        // Let's do strict match for now. 
-        // If currentHour is 10, we find bookings at 10.
         if (bookingHour === currentHour) {
             await reminderService.sendReminderForBooking(booking);
         }
