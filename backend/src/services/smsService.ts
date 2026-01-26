@@ -115,5 +115,31 @@ export const smsService = {
       }
 
       return `Happy Birthday ${name}! 🎉 Wishing you a wonderful day from everyone at Victoria Braids!`;
+  },
+
+  /**
+   * Get content for payment receipt SMS
+   */
+  getPaymentReceiptContent: async (name: string, amount: string) => {
+      return `Hi ${name}, we received your payment of $${amount}. Thank you! - Victoria Braids`;
+  },
+
+  /**
+   * Get content for Easter greeting SMS
+   */
+  getEasterGreetingContent: async (name: string) => {
+      try {
+        const template = await prisma.notificationTemplate.findUnique({
+          where: { name: 'easter_greeting_sms' }
+        });
+
+        if (template && template.isActive) {
+          return replaceVariables(template.content, { name });
+        }
+      } catch (e) {
+        console.warn('Failed to fetch template easter_greeting_sms', e);
+      }
+
+      return `Happy Easter ${name}! 🐰 Wishing you a wonderful holiday from Victoria Braids!`;
   }
 };

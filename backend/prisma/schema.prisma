@@ -189,6 +189,7 @@ enum BookingStatus {
 model Notification {
   id          String   @id @default(uuid()) @db.Uuid
   type        NotificationType
+  channel     NotificationChannel
   recipient   String   @db.VarChar(150)
   subject     String?  @db.VarChar(255)
   content     String   @db.Text
@@ -206,6 +207,7 @@ model NotificationTemplate {
   id          String           @id @default(uuid()) @db.Uuid
   name        String           @unique @db.VarChar(100)
   type        NotificationType
+  channel     NotificationChannel
   subject     String?          @db.VarChar(255)
   content     String           @db.Text
   variables   Json?
@@ -229,6 +231,15 @@ model GalleryItem {
 }
 
 enum NotificationType {
+  BN
+  GN
+  BTDN
+  PN
+  EN
+  AN
+}
+
+enum NotificationChannel {
   EMAIL
   SMS
 }

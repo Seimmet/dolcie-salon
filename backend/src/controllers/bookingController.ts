@@ -97,6 +97,8 @@ export const getBookings = async (req: Request, res: Response): Promise<void> =>
   }
 };
 
+import { NotificationType, NotificationChannel } from '@prisma/client';
+
 export const createBooking = async (req: Request, res: Response): Promise<void> => {
   try {
     const { styleId, categoryId, stylistId, date, time, guestDetails, paymentIntentId, promoId } = req.body;
@@ -176,7 +178,14 @@ export const createBooking = async (req: Request, res: Response): Promise<void> 
             // Queue guest credentials email
             if (user.notificationConsent) {
                 const { subject, html } = await emailService.getGuestCredentialsContent(guestDetails.fullName, randomPassword);
-                await notificationQueue.add('EMAIL', guestDetails.email, html, subject, { type: 'GUEST_CREDENTIALS', userId: user.id });
+                await notificationQueue.add(
+                    'EMAIL', 
+                    'GN', 
+                    guestDetails.email, 
+                    html, 
+                    subject, 
+                    { type: 'GUEST_CREDENTIALS', userId: user.id }
+                );
             }
         } else {
             // Update birthday if provided and not set
@@ -314,13 +323,27 @@ export const createBooking = async (req: Request, res: Response): Promise<void> 
                 time, 
                 !!guestDetails
             );
-            await notificationQueue.add('EMAIL', user.email, html, subject, { bookingId: result.id, userId: user.id });
+            await notificationQueue.add(
+                'EMAIL', 
+                'BN', 
+                user.email, 
+                html, 
+                subject, 
+                { bookingId: result.id, userId: user.id }
+            );
         }
 
         // Queue Confirmation SMS
         if (user.phone) {
             const smsBody = await smsService.getBookingConfirmationContent(user.fullName, date, time);
-            await notificationQueue.add('SMS', user.phone, smsBody, undefined, { bookingId: result.id, userId: user.id });
+            await notificationQueue.add(
+                'SMS', 
+                'BN', 
+                user.phone, 
+                smsBody, 
+                undefined, 
+                { bookingId: result.id, userId: user.id }
+            );
         }
     }
 
@@ -347,22 +370,23 @@ export const updateBooking = async (req: Request, res: Response): Promise<void> 
         
         // Handle Rescheduling (Date/Time change)
         if (date && time) {
+            // Parse Date and Time (same logic as createBooking)
+            const parsedDate = new Date(date);
+            const timeParts = time.split(':');
+            const parsedTime = new Date(0); // Epoch
+            parsedTime.setHours(Number(timeParts[0]));
+            parsedTime.setMinutes(Number(timeParts[1]));
+
             // Check if this new slot is available (basic conflict check)
             // If a stylist is assigned, check their availability
-            // If no stylist is assigned, check general capacity (simplified: just check for duplicates for now or rely on frontend to check availability)
-            
-            // Note: Ideally, we should reuse the availability logic from getAvailability, 
-            // but for Admin override, we might want to be more flexible.
-            // Let's at least check if the assigned stylist is free if one is assigned.
-            
             const effectiveStylistId = stylistId || booking.stylistId;
 
             if (effectiveStylistId) {
                 const conflict = await prisma.booking.findFirst({
                     where: {
                         stylistId: effectiveStylistId,
-                        bookingDate: date,
-                        bookingTime: time,
+                        bookingDate: parsedDate,
+                        bookingTime: parsedTime,
                         status: { not: 'cancelled' },
                         id: { not: id } // Exclude current booking
                     }
@@ -374,8 +398,8 @@ export const updateBooking = async (req: Request, res: Response): Promise<void> 
                 }
             }
 
-            data.bookingDate = date;
-            data.bookingTime = time;
+            data.bookingDate = parsedDate;
+            data.bookingTime = parsedTime;
         }
         
         if (stylistId) {
@@ -383,8 +407,11 @@ export const updateBooking = async (req: Request, res: Response): Promise<void> 
                 data.stylistId = null;
             } else {
                 // Check if stylist is already booked at this time (use new date/time if provided, else current)
-                const targetDate = date || booking.bookingDate;
-                const targetTime = time || booking.bookingTime;
+                // Note: If we just parsed date/time above, we should use that. 
+                // However, date/time variables are strings, data.bookingDate is Date.
+                
+                const targetDate = (date && time) ? data.bookingDate : booking.bookingDate;
+                const targetTime = (date && time) ? data.bookingTime : booking.bookingTime;
 
                 const conflict = await prisma.booking.findFirst({
                     where: {
@@ -463,13 +490,27 @@ export const updateBooking = async (req: Request, res: Response): Promise<void> 
                  // Queue Thank You Email
                  if (customer.email) {
                      const { subject, html } = await emailService.getBookingCompletionContent(customer.fullName, category?.name || 'Service');
-                     await notificationQueue.add('EMAIL', customer.email, html, subject, { bookingId: id, userId: customer.id });
+                     await notificationQueue.add(
+                         'EMAIL', 
+                         'BN', 
+                         customer.email, 
+                         html, 
+                         subject, 
+                         { bookingId: id, userId: customer.id }
+                     );
                  }
                  
                  // Queue Thank You SMS
                  if (customer.phone) {
                      const smsBody = await smsService.getBookingCompletionContent(customer.fullName);
-                     await notificationQueue.add('SMS', customer.phone, smsBody, undefined, { bookingId: id, userId: customer.id });
+                     await notificationQueue.add(
+                         'SMS', 
+                         'BN', 
+                         customer.phone, 
+                         smsBody, 
+                         undefined, 
+                         { bookingId: id, userId: customer.id }
+                     );
                  }
              }
         }
@@ -592,7 +633,7 @@ export const addBookingPayment = async (req: Request, res: Response): Promise<vo
         const { id } = req.params;
         const { amount, method, stripePaymentId } = req.body; // Amount in dollars
 
-        await prisma.payment.create({
+        const payment = await prisma.payment.create({
             data: {
                 bookingId: id,
                 amount: amount,
@@ -606,8 +647,49 @@ export const addBookingPayment = async (req: Request, res: Response): Promise<vo
         // We return the updated booking with payments
         const booking = await prisma.booking.findUnique({
             where: { id },
-            include: { payments: true }
+            include: { 
+                payments: true,
+                customer: { select: { id: true, fullName: true, email: true, phone: true, notificationConsent: true } }
+            }
         });
+
+        if (booking && booking.customer && booking.customer.notificationConsent) {
+            const customer = booking.customer;
+            const dateStr = new Date().toLocaleDateString();
+
+            // Send Email Receipt
+            if (customer.email) {
+                const { subject, html } = await emailService.getPaymentReceiptContent(
+                    customer.fullName,
+                    String(amount),
+                    dateStr,
+                    payment.stripePaymentId || 'N/A'
+                );
+                
+                await notificationQueue.add(
+                    'EMAIL',
+                    'PN',
+                    customer.email,
+                    html,
+                    subject,
+                    { bookingId: id, paymentId: payment.id, type: 'PAYMENT_RECEIPT' }
+                );
+            }
+
+            // Send SMS Receipt
+            if (customer.phone) {
+                const smsBody = await smsService.getPaymentReceiptContent(customer.fullName, String(amount));
+                
+                await notificationQueue.add(
+                    'SMS',
+                    'PN',
+                    customer.phone,
+                    smsBody,
+                    undefined,
+                    { bookingId: id, paymentId: payment.id, type: 'PAYMENT_RECEIPT' }
+                );
+            }
+        }
 
         res.json(booking);
     } catch (error) {

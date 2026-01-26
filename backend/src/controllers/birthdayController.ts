@@ -4,6 +4,8 @@ import { notificationQueue } from '../services/notificationQueueService';
 import { emailService } from '../services/emailService';
 import { smsService } from '../services/smsService';
 
+import { NotificationType, NotificationChannel } from '@prisma/client';
+
 export const getUpcomingBirthdays = async (req: Request, res: Response): Promise<void> => {
     try {
         const today = new Date();
@@ -65,11 +67,25 @@ export const sendBirthdayGreeting = async (req: Request, res: Response): Promise
         if (type === 'email' && user.email) {
             // Send Email
             const { subject, html } = await emailService.getBirthdayGreetingContent(user.fullName);
-            await notificationQueue.add('EMAIL', user.email, html, subject, { type: 'BIRTHDAY_GREETING', userId: user.id });
+            await notificationQueue.add(
+                'EMAIL', 
+                'BTDN', 
+                user.email, 
+                html, 
+                subject, 
+                { type: 'BIRTHDAY_GREETING', userId: user.id }
+            );
         } else if (type === 'sms' && user.phone) {
             // Send SMS
             const message = await smsService.getBirthdayGreetingContent(user.fullName);
-            await notificationQueue.add('SMS', user.phone, message, undefined, { type: 'BIRTHDAY_GREETING', userId: user.id });
+            await notificationQueue.add(
+                'SMS', 
+                'BTDN', 
+                user.phone, 
+                message, 
+                undefined, 
+                { type: 'BIRTHDAY_GREETING', userId: user.id }
+            );
         } else {
             res.status(400).json({ message: 'Invalid type or missing contact info' });
             return;

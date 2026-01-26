@@ -25,9 +25,18 @@ async function main() {
       if (count === 0 && modelData && modelData.length > 0) {
         console.log(`Restoring ${modelName} (${modelData.length} records)...`);
         
+        // Fix for Category isActive issue
+        let finalData = modelData;
+        if (modelName === 'category') {
+             finalData = modelData.map((item: any) => {
+                const { isActive, ...rest } = item;
+                return rest;
+             });
+        }
+
         // @ts-ignore
         await prisma[modelName].createMany({ 
-          data: modelData,
+          data: finalData,
           skipDuplicates: true 
         });
       } else {

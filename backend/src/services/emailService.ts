@@ -242,5 +242,55 @@ export const emailService = {
         </div>
     `;
     return { subject, html };
+  },
+
+  /**
+   * Get content for payment receipt email
+   */
+  getPaymentReceiptContent: async (name: string, amount: string, date: string, paymentId: string) => {
+    try {
+      const template = await prisma.notificationTemplate.findUnique({
+        where: { name: 'payment_receipt_email' }
+      });
+
+      if (template && template.isActive) {
+        return {
+          subject: template.subject || 'Payment Receipt - Victoria Braids & Weaves',
+          html: replaceVariables(template.content, { name, amount, date, paymentId })
+        };
+      }
+    } catch (e) {
+      console.warn('Failed to fetch template payment_receipt_email', e);
+    }
+
+    return {
+      subject: 'Payment Receipt - Victoria Braids & Weaves',
+      html: `<p>Hi ${name},</p><p>We received your payment of $${amount} on ${date}.</p><p>Transaction ID: ${paymentId}</p><p>Thank you!</p>`
+    };
+  },
+
+  /**
+   * Get content for Easter greeting email
+   */
+  getEasterGreetingContent: async (name: string) => {
+    try {
+      const template = await prisma.notificationTemplate.findUnique({
+        where: { name: 'easter_greeting_email' }
+      });
+
+      if (template && template.isActive) {
+        return {
+          subject: template.subject || 'Happy Easter from Victoria Braids!',
+          html: replaceVariables(template.content, { name })
+        };
+      }
+    } catch (e) {
+      console.warn('Failed to fetch template easter_greeting_email', e);
+    }
+
+    return {
+      subject: 'Happy Easter from Victoria Braids!',
+      html: `<p>Hi ${name},</p><p>Happy Easter! 🐰 We hope you have a wonderful holiday filled with joy and happiness.</p><p>Best,<br>Victoria Braids Team</p>`
+    };
   }
 };

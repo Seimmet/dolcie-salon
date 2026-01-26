@@ -1,5 +1,5 @@
 import express from 'express';
-import { authenticateToken, authorize } from '../middleware/authMiddleware';
+import { protect, authorize } from '../middleware/authMiddleware';
 import { 
   getTemplates, 
   updateTemplate, 
@@ -12,14 +12,14 @@ import {
 
 const router = express.Router();
 
-router.get('/templates', authenticateToken, authorize('admin'), getTemplates);
-router.put('/templates/:id', authenticateToken, authorize('admin'), updateTemplate);
-router.get('/history', authenticateToken, authorize('admin'), getNotificationHistory);
+router.get('/templates', protect, authorize('admin'), getTemplates);
+router.put('/templates/:id', protect, authorize('admin'), updateTemplate);
+router.get('/history', protect, authorize('admin'), getNotificationHistory);
 
 // Approval workflow routes
-router.get('/pending', authenticateToken, authorize('admin'), getPendingApprovals);
-router.post('/pending/:id/approve', authenticateToken, authorize('admin'), approveNotification);
-router.post('/pending/:id/reject', authenticateToken, authorize('admin'), rejectNotification);
-router.put('/pending/:id', authenticateToken, authorize('admin'), updatePendingNotification);
+router.get('/pending', protect, authorize('admin'), getPendingApprovals);
+router.post('/pending/:id/approve', protect, authorize('admin'), approveNotification);
+router.post('/pending/:id/reject', protect, authorize('admin'), rejectNotification);
+router.put('/pending/:id', protect, authorize('admin'), updatePendingNotification);
 
 export default router;

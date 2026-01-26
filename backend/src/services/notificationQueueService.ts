@@ -1,14 +1,15 @@
 import prisma from '../utils/prisma';
 import { emailService } from './emailService';
 import { smsService } from './smsService';
-import { NotificationType } from '@prisma/client';
+import { NotificationType, NotificationChannel } from '@prisma/client';
 
 export const notificationQueue = {
   /**
    * Add a notification to the queue
    */
   add: async (
-    type: 'EMAIL' | 'SMS',
+    channel: NotificationChannel,
+    type: NotificationType,
     recipient: string,
     content: string,
     subject?: string,
@@ -22,15 +23,16 @@ export const notificationQueue = {
 
       await prisma.notification.create({
         data: {
-          type: type as NotificationType,
+          channel,
+          type,
           recipient,
           content,
           subject,
           metadata: metadata || {},
-          status: initialStatus as any // Type cast until client is regenerated
+          status: initialStatus as any
         }
       });
-      console.log(`[Queue] Added ${type} notification for ${recipient} (Status: ${initialStatus})`);
+      console.log(`[Queue] Added ${channel} notification (${type}) for ${recipient} (Status: ${initialStatus})`);
     } catch (error) {
       console.error('Error adding notification to queue:', error);
       // In a robust system, we might want to alert admins here
@@ -61,10 +63,10 @@ export const notificationQueue = {
 
     for (const notification of pending) {
       try {
-        if (notification.type === 'EMAIL') {
+        if (notification.channel === 'EMAIL') {
            if (!notification.subject) throw new Error('Email subject missing');
            await emailService.sendEmail(notification.recipient, notification.subject, notification.content);
-        } else if (notification.type === 'SMS') {
+        } else if (notification.channel === 'SMS') {
            await smsService.sendSms(notification.recipient, notification.content);
         }
 

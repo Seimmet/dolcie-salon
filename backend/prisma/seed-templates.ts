@@ -1,4 +1,4 @@
-import { PrismaClient, NotificationType } from '@prisma/client';
+import { PrismaClient, NotificationType, NotificationChannel } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -6,7 +6,8 @@ const templates = [
   // EMAIL TEMPLATES
   {
     name: 'guest_credentials_email',
-    type: NotificationType.EMAIL,
+    channel: NotificationChannel.EMAIL,
+    type: NotificationType.GN,
     subject: 'Your Account Credentials - Victoria Braids & Weaves',
     content: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -26,7 +27,8 @@ const templates = [
   },
   {
     name: 'booking_confirmation_email',
-    type: NotificationType.EMAIL,
+    channel: NotificationChannel.EMAIL,
+    type: NotificationType.BN,
     subject: 'Booking Confirmation - Victoria Braids & Weaves',
     content: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -42,7 +44,8 @@ const templates = [
   },
   {
     name: 'booking_confirmation_email_user',
-    type: NotificationType.EMAIL,
+    channel: NotificationChannel.EMAIL,
+    type: NotificationType.BN,
     subject: 'Appointment Confirmation - Victoria Braids & Weaves',
     content: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -62,7 +65,8 @@ const templates = [
   },
   {
     name: 'booking_completion_email',
-    type: NotificationType.EMAIL,
+    channel: NotificationChannel.EMAIL,
+    type: NotificationType.BN,
     subject: 'Thank You for Visiting Victoria Braids & Weaves',
     content: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -78,7 +82,8 @@ const templates = [
   },
   {
     name: 'booking_reminder_email',
-    type: NotificationType.EMAIL,
+    channel: NotificationChannel.EMAIL,
+    type: NotificationType.AN,
     subject: 'Appointment Reminder - Victoria Braids & Weaves',
     content: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -98,25 +103,29 @@ const templates = [
   // SMS TEMPLATES
   {
     name: 'booking_confirmation_sms',
-    type: NotificationType.SMS,
+    channel: NotificationChannel.SMS,
+    type: NotificationType.BN,
     content: `Hi {name}, your appointment at Victoria Braids is confirmed for {date} at {time}. See you soon!`,
     variables: ['name', 'date', 'time']
   },
   {
     name: 'booking_reminder_sms',
-    type: NotificationType.SMS,
+    channel: NotificationChannel.SMS,
+    type: NotificationType.AN,
     content: `Hi {name}, reminder: You have an appointment at Victoria Braids tomorrow ({date}) at {time}.`,
     variables: ['name', 'date', 'time']
   },
   {
     name: 'booking_completion_sms',
-    type: NotificationType.SMS,
+    channel: NotificationChannel.SMS,
+    type: NotificationType.BN,
     content: `Hi {name}, thanks for visiting Victoria Braids! We hope you love your new look.`,
     variables: ['name']
   },
   {
     name: 'birthday_greeting_email',
-    type: NotificationType.EMAIL,
+    channel: NotificationChannel.EMAIL,
+    type: NotificationType.BTDN,
     subject: 'Happy Birthday from Victoria Braids! 🎂',
     content: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -130,8 +139,31 @@ const templates = [
   },
   {
     name: 'birthday_greeting_sms',
-    type: NotificationType.SMS,
+    channel: NotificationChannel.SMS,
+    type: NotificationType.BTDN,
     content: `Happy Birthday {name}! 🎉 Wishing you a wonderful day from everyone at Victoria Braids!`,
+    variables: ['name']
+  },
+  {
+    name: 'easter_greeting_email',
+    channel: NotificationChannel.EMAIL,
+    type: NotificationType.EN,
+    subject: 'Happy Easter from Victoria Braids! 🐰',
+    content: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #333;">Happy Easter, {name}! 🐰</h2>
+        <p>Wishing you a wonderful holiday filled with joy, happiness, and new beginnings.</p>
+        <p>Thank you for being a valued client!</p>
+        <p>Best wishes,<br>Victoria Braids Team</p>
+      </div>
+    `,
+    variables: ['name']
+  },
+  {
+    name: 'easter_greeting_sms',
+    channel: NotificationChannel.SMS,
+    type: NotificationType.EN,
+    content: `Happy Easter {name}! 🐰 Wishing you a wonderful holiday from Victoria Braids!`,
     variables: ['name']
   }
 ];
@@ -143,6 +175,7 @@ async function main() {
     await prisma.notificationTemplate.upsert({
       where: { name: template.name },
       update: {
+        channel: template.channel,
         type: template.type,
         subject: template.subject,
         content: template.content,
@@ -150,6 +183,7 @@ async function main() {
       },
       create: {
         name: template.name,
+        channel: template.channel,
         type: template.type,
         subject: template.subject,
         content: template.content,

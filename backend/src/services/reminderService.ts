@@ -2,6 +2,7 @@ import prisma from '../utils/prisma';
 import { emailService } from './emailService';
 import { smsService } from './smsService';
 import { notificationQueue } from './notificationQueueService';
+import { NotificationType, NotificationChannel } from '@prisma/client';
 
 export const reminderService = {
   /**
@@ -115,6 +116,7 @@ export const reminderService = {
 
         await notificationQueue.add(
           'EMAIL',
+          'AN',
           customer.email,
           html,
           subject,
@@ -132,6 +134,7 @@ export const reminderService = {
 
         await notificationQueue.add(
           'SMS',
+          'AN',
           customer.phone,
           smsBody,
           undefined,
