@@ -597,20 +597,11 @@ export default function Bookings() {
                     <div className={`p-4 md:w-48 flex flex-col justify-center items-center md:items-start border-b md:border-b-0 md:border-r bg-muted/30`}>
                       {!date && (
                         <span className="text-sm font-medium text-muted-foreground mb-1">
-                            {new Date(booking.bookingDate).toLocaleDateString("en-US", {
-                              timeZone: "America/New_York",
-                              month: "short",
-                              day: "numeric",
-                            })}
+                            {booking.bookingDate}
                         </span>
                       )}
                       <span className="text-2xl font-bold">
-                        {new Date(booking.bookingTime).toLocaleTimeString("en-US", {
-                          timeZone: "America/New_York",
-                          hour: "numeric",
-                          minute: "2-digit",
-                          hour12: true,
-                        })}
+                        {booking.bookingTime}
                       </span>
                       <Badge 
                         variant="secondary" 
