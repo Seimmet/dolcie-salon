@@ -14,6 +14,7 @@ export interface Stylist {
   isActive: boolean;
   createdAt: string;
   pricing?: StylistPricing[];
+  styles?: { id: string; name: string }[];
 }
 
 export interface StylistPricing {

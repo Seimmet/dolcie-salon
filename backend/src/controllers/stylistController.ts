@@ -35,6 +35,12 @@ export const getAllStylists = async (req: Request, res: Response): Promise<void>
               role: true,
               createdAt: true,
             }
+          },
+          styles: {
+            select: {
+              id: true,
+              name: true
+            }
           }
         },
         orderBy: { createdAt: 'desc' },
@@ -54,7 +60,8 @@ export const getAllStylists = async (req: Request, res: Response): Promise<void>
       address: stylist.user.address,
       skillLevel: stylist.skillLevel,
       isActive: stylist.isActive,
-      createdAt: stylist.createdAt
+      createdAt: stylist.createdAt,
+      styles: (stylist as any).styles || []
     }));
 
     res.json({
@@ -87,6 +94,12 @@ export const getStylistById = async (req: Request, res: Response): Promise<void>
             address: true,
             role: true,
           }
+        },
+        styles: {
+            select: {
+                id: true,
+                name: true
+            }
         }
       }
     });
@@ -104,7 +117,8 @@ export const getStylistById = async (req: Request, res: Response): Promise<void>
       phone: stylist.user.phone,
       address: stylist.user.address,
       skillLevel: stylist.skillLevel,
-      isActive: stylist.isActive
+      isActive: stylist.isActive,
+      styles: (stylist as any).styles || []
     });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching stylist' });
@@ -114,7 +128,7 @@ export const getStylistById = async (req: Request, res: Response): Promise<void>
 // Admin: Create Stylist
 export const createStylist = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { fullName, email, phone, address, password, skillLevel } = req.body;
+    const { fullName, email, phone, address, password, skillLevel, styleIds } = req.body;
 
     if (!fullName || !email || !password) {
       res.status(400).json({ message: 'Please provide all required fields' });
@@ -147,6 +161,9 @@ export const createStylist = async (req: Request, res: Response): Promise<void> 
         data: {
           userId: user.id,
           skillLevel: skillLevel || 'Intermediate',
+          styles: styleIds && Array.isArray(styleIds) ? {
+            connect: styleIds.map((id: string) => ({ id }))
+          } : undefined
         },
       });
 
@@ -173,7 +190,7 @@ export const createStylist = async (req: Request, res: Response): Promise<void> 
 export const updateStylist = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const { fullName, email, phone, address, skillLevel, isActive } = req.body;
+    const { fullName, email, phone, address, skillLevel, isActive, styleIds } = req.body;
 
     const stylist = await prisma.stylist.findUnique({ where: { id } });
     if (!stylist) {
@@ -199,7 +216,10 @@ export const updateStylist = async (req: Request, res: Response): Promise<void> 
         where: { id },
         data: {
           skillLevel,
-          isActive
+          isActive,
+          styles: styleIds && Array.isArray(styleIds) ? {
+            set: styleIds.map((id: string) => ({ id }))
+          } : undefined
         }
       });
     });

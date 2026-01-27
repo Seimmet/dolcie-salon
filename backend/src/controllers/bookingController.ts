@@ -132,6 +132,30 @@ export const createBooking = async (req: Request, res: Response): Promise<void> 
              res.status(400).json({ message: 'Invalid Style ID' });
              return;
          }
+
+         // Validate Stylist Capability
+         if (stylistId) {
+            const capableStylist = await prisma.stylist.findFirst({
+                where: {
+                    id: stylistId,
+                    styles: { some: { id: styleId } }
+                }
+            });
+
+            if (!capableStylist) {
+                // If stylist exists but not capable. 
+                // We should double check if stylistId is valid first, but findFirst handles it.
+                // If stylistId is invalid, capableStylist is null.
+                // If stylistId is valid but no relation, capableStylist is null.
+                
+                // Let's check if stylist exists at all to give better error
+                const stylistExists = await prisma.stylist.findUnique({ where: { id: stylistId } });
+                if (stylistExists) {
+                     res.status(400).json({ message: 'Selected stylist cannot perform this style.' });
+                     return;
+                }
+            }
+         }
     }
 
     // Check if amount is correct (minimum $1 deposit for testing, or dynamic deposit)
@@ -406,6 +430,20 @@ export const updateBooking = async (req: Request, res: Response): Promise<void> 
             if (stylistId === 'unassigned') {
                 data.stylistId = null;
             } else {
+                // Check Capability
+                if (booking.styleId) {
+                    const capableStylist = await prisma.stylist.findFirst({
+                        where: {
+                            id: stylistId,
+                            styles: { some: { id: booking.styleId } }
+                        }
+                    });
+                    if (!capableStylist) {
+                         res.status(400).json({ message: 'Selected stylist cannot perform this style.' });
+                         return;
+                    }
+                }
+
                 // Check if stylist is already booked at this time (use new date/time if provided, else current)
                 // Note: If we just parsed date/time above, we should use that. 
                 // However, date/time variables are strings, data.bookingDate is Date.

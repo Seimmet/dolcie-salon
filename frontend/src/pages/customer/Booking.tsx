@@ -289,7 +289,7 @@ export default function Booking() {
             dateStr,
             selectedStyleId,
             selectedCategoryId,
-            selectedStylistId || undefined,
+            (selectedStylistId && selectedStylistId !== 'unassigned') ? selectedStylistId : undefined,
             duration
           );
           setWeeklyAvailability({ [dateStr]: slots });
@@ -396,7 +396,7 @@ export default function Booking() {
       await bookingService.createBooking({
         styleId: selectedStyleId,
         categoryId: selectedCategoryId,
-        stylistId: selectedStylistId,
+        stylistId: (selectedStylistId && selectedStylistId !== 'unassigned') ? selectedStylistId : undefined,
         date: dateStr,
         time: selectedTime,
         guestDetails: isLoggedIn ? { ...guestDetails, smsConsent: authSmsConsent } : guestDetails,
@@ -755,7 +755,13 @@ export default function Booking() {
                   <SelectValue placeholder="Any Available Braider" />
                 </SelectTrigger>
                 <SelectContent>
-                  {stylists.map((stylist) => (
+                  <SelectItem value="unassigned">Any Available Braider</SelectItem>
+                  {stylists
+                    .filter(stylist => 
+                      !selectedStyleId || 
+                      (stylist.styles && stylist.styles.some(s => s.id === selectedStyleId))
+                    )
+                    .map((stylist) => (
                     <SelectItem key={stylist.id} value={stylist.id}>
                       {stylist.fullName}
                     </SelectItem>
@@ -792,7 +798,7 @@ export default function Booking() {
                     <div className="flex justify-between">
                         <span className="text-muted-foreground">Braider:</span>
                         <span className="font-medium">
-                            {stylists.find(s => s.id === selectedStylistId)?.fullName || "Not selected"}
+                            {stylists.find(s => s.id === selectedStylistId)?.fullName || (selectedStylistId === 'unassigned' ? "Any Available Braider" : "Not selected")}
                         </span>
                     </div>
                     <div className="border-t pt-3 mt-3 space-y-1">
@@ -997,7 +1003,7 @@ export default function Booking() {
                       onCheckedChange={(checked) => setGuestDetails({...guestDetails, smsConsent: checked as boolean})}
                   />
                   <Label htmlFor="smsConsent" className="text-sm font-normal cursor-pointer">
-                      I consent to receiving notification
+                      I consent to receiving SMS and email notifications
                   </Label>
                </div>
             )}
@@ -1020,7 +1026,7 @@ export default function Booking() {
                       }}
                   />
                   <Label htmlFor="authSmsConsentStep3" className="text-sm font-normal cursor-pointer">
-                      I consent to receiving notification
+                     I consent to receiving SMS and email notifications
                   </Label>
                </div>
             )}

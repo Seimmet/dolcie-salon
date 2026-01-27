@@ -5,6 +5,7 @@ import * as z from "zod";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Loader2, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { stylistService, Stylist } from "@/services/stylistService";
+import { styleService, Style } from "@/services/styleService";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -39,6 +40,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const stylistSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
@@ -48,12 +50,14 @@ const stylistSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters").optional().or(z.literal("")),
   skillLevel: z.string().min(1, "Skill level is required"),
   isActive: z.boolean().default(true),
+  styleIds: z.array(z.string()).default([]),
 });
 
 type StylistFormValues = z.infer<typeof stylistSchema>;
 
 const Stylists = () => {
   const [stylists, setStylists] = useState<Stylist[]>([]);
+  const [availableStyles, setAvailableStyles] = useState<Style[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -106,7 +110,17 @@ const Stylists = () => {
 
   useEffect(() => {
     fetchStylists();
+    fetchStyles();
   }, [page, debouncedSearch]);
+
+  const fetchStyles = async () => {
+      try {
+          const res = await styleService.getAllStyles({ limit: 100 });
+          setAvailableStyles(res.data);
+      } catch (error) {
+          console.error("Failed to load styles", error);
+      }
+  };
 
   const onSubmit = async (data: StylistFormValues) => {
     setIsSubmitting(true);
@@ -160,6 +174,7 @@ const Stylists = () => {
       password: "", // Don't prefill password
       skillLevel: stylist.skillLevel,
       isActive: stylist.isActive,
+      styleIds: stylist.styles?.map(s => s.id) || [],
     });
     setIsDialogOpen(true);
   };
@@ -174,6 +189,7 @@ const Stylists = () => {
       password: "",
       skillLevel: "Intermediate",
       isActive: true,
+      styleIds: [],
     });
     setIsDialogOpen(true);
   };
@@ -442,8 +458,59 @@ const Stylists = () => {
                       </FormControl>
                     </FormItem>
                   )}
-                />
+              />
               )}
+
+              <FormField
+                control={form.control}
+                name="styleIds"
+                render={() => (
+                  <FormItem>
+                    <div className="mb-4">
+                      <FormLabel className="text-base">Capable Styles</FormLabel>
+                      <DialogDescription>
+                        Select the styles this stylist can perform.
+                      </DialogDescription>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 border p-4 rounded-md h-40 overflow-y-auto">
+                      {availableStyles.map((style) => (
+                        <FormField
+                          key={style.id}
+                          control={form.control}
+                          name="styleIds"
+                          render={({ field }) => {
+                            return (
+                              <FormItem
+                                key={style.id}
+                                className="flex flex-row items-start space-x-3 space-y-0"
+                              >
+                                <FormControl>
+                                  <Checkbox
+                                    checked={field.value?.includes(style.id)}
+                                    onCheckedChange={(checked) => {
+                                      return checked
+                                        ? field.onChange([...(field.value || []), style.id])
+                                        : field.onChange(
+                                            field.value?.filter(
+                                              (value) => value !== style.id
+                                            )
+                                          )
+                                    }}
+                                  />
+                                </FormControl>
+                                <FormLabel className="font-normal">
+                                  {style.name}
+                                </FormLabel>
+                              </FormItem>
+                            )
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <DialogFooter>
                 <Button type="submit" className="bg-gold hover:bg-gold-dark text-white" disabled={isSubmitting}>

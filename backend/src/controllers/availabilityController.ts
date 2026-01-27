@@ -42,14 +42,24 @@ export const getAvailability = async (req: Request, res: Response): Promise<void
     // 1. Get Active Stylists
     let activeStylists: { id: string, user: { fullName: string } }[] = [];
     if (stylistId) {
-        const stylist = await prisma.stylist.findUnique({
-            where: { id: stylistId as string, isActive: true },
+        const where: any = { id: stylistId as string, isActive: true };
+        if (styleId) {
+            where.styles = { some: { id: styleId as string } };
+        }
+
+        const stylist = await prisma.stylist.findFirst({
+            where,
             select: { id: true, user: { select: { fullName: true } } }
         });
         if (stylist) activeStylists = [stylist];
     } else {
+        const where: any = { isActive: true };
+        if (styleId) {
+            where.styles = { some: { id: styleId as string } };
+        }
+
         activeStylists = await prisma.stylist.findMany({
-            where: { isActive: true },
+            where,
             select: { id: true, user: { select: { fullName: true } } }
         });
     }
