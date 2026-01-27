@@ -601,13 +601,12 @@ export default function Bookings() {
                         </span>
                       )}
                       <span className="text-2xl font-bold">
-                        {booking.bookingTime}
+                         {format(parseISO(booking.bookingTime), "h:mm a")}
                       </span>
                       <Badge 
                         variant="secondary" 
-                        className={`mt-2 ${getStatusColor(booking.status)}`}
-                      >
-                        {format(parseISO(booking.bookingTime), "h:mm a")}
+                        className={`mt-2 ${getStatusColor(booking.status)}`}>
+                        {booking.status.toUpperCase()}
                       </Badge>
                     </div>
 
