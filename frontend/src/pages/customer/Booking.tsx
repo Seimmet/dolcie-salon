@@ -1165,10 +1165,10 @@ export default function Booking() {
                   Thank you for booking with {SALON_INFO.name}. A confirmation email has been sent to you.
               </p>
               <p>
-                  To change your booking, call {SALON_INFO.bookingPhone}.
+                  To change your booking, text {SALON_INFO.bookingPhone}.
               </p>
               <p>
-                  For other enquiries, call {SALON_INFO.inquiryPhone}.
+                  For other enquiries, text {SALON_INFO.inquiryPhone}.
               </p>
           </div>
           <div className="pt-6">
