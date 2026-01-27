@@ -597,7 +597,7 @@ export default function Bookings() {
                     <div className={`p-4 md:w-48 flex flex-col justify-center items-center md:items-start border-b md:border-b-0 md:border-r bg-muted/30`}>
                       {!date && (
                         <span className="text-sm font-medium text-muted-foreground mb-1">
-                            {booking.bookingDate}
+                             {format(parseISO(booking.bookingDate), "MMM d")}
                         </span>
                       )}
                       <span className="text-2xl font-bold">
@@ -607,7 +607,7 @@ export default function Bookings() {
                         variant="secondary" 
                         className={`mt-2 ${getStatusColor(booking.status)}`}
                       >
-                        {booking.status.toUpperCase()}
+                        {format(parseISO(booking.bookingTime), "h:mm a")}
                       </Badge>
                     </div>
 
