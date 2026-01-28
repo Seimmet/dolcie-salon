@@ -1099,10 +1099,10 @@ export default function Booking() {
                             <span>Base price</span>
                             <span>${selectedPricing.price}</span>
                           </div>
-                          {victoriaSurcharge > 0 && (
+                          {stylistSurcharge > 0 && (
                             <div className="flex justify-between text-sm text-muted-foreground">
                                 <span>Master Stylist Surcharge (Victoria)</span>
-                                <span>+${victoriaSurcharge}</span>
+                                <span>+${stylistSurcharge}</span>
                             </div>
                           )}
                           {appliedDiscountPercentage > 0 && discountedPrice !== null && (
