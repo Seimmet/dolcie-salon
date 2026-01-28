@@ -265,13 +265,14 @@ export default function Faqs() {
           setEditingFaq(null);
         }
       }}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[425px] max-h-[90vh] flex flex-col w-[95vw]">
           <DialogHeader>
             <DialogTitle>{editingFaq ? 'Edit FAQ' : 'Create New FAQ'}</DialogTitle>
             <DialogDescription>
               Add a question and answer for your customers.
             </DialogDescription>
           </DialogHeader>
+          <div className="flex-1 overflow-y-auto px-1">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="question">Question</Label>
@@ -315,18 +316,21 @@ export default function Faqs() {
               </Button>
             </DialogFooter>
           </form>
+          </div>
         </DialogContent>
       </Dialog>
 
       {/* Delete Confirmation */}
       <AlertDialog open={!!deletingId} onOpenChange={(open) => !open && setDeletingId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete this FAQ.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
+        <AlertDialogContent className="max-h-[90vh] w-[95vw] sm:max-w-lg flex flex-col">
+          <div className="flex-1 overflow-y-auto px-1">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete this FAQ.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction 

@@ -371,13 +371,14 @@ const Styles = () => {
 
       {/* Create/Edit Style Dialog */}
       <Dialog open={isStyleDialogOpen} onOpenChange={setIsStyleDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] flex flex-col w-[95vw] sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{editingStyle ? "Edit Style" : "Create Style"}</DialogTitle>
             <DialogDescription>
               Manage your salon styles (e.g., Knotless Braids).
             </DialogDescription>
           </DialogHeader>
+          <div className="flex-1 overflow-y-auto px-1">
           <Form {...styleForm}>
             <form onSubmit={styleForm.handleSubmit(onStyleSubmit)} className="space-y-4">
               <FormField
@@ -428,12 +429,13 @@ const Styles = () => {
               </DialogFooter>
             </form>
           </Form>
+          </div>
         </DialogContent>
       </Dialog>
 
       {/* Pricing Management Dialog */}
       <Dialog open={isPricingDialogOpen} onOpenChange={setIsPricingDialogOpen}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col w-[95vw]">
           <DialogHeader>
             <DialogTitle>Manage Pricing: {selectedStyle?.name}</DialogTitle>
             <DialogDescription>
@@ -441,6 +443,7 @@ const Styles = () => {
             </DialogDescription>
           </DialogHeader>
           
+          <div className="flex-1 overflow-y-auto px-1">
           <div className="space-y-6">
             {/* Add New Pricing Form */}
             <div className="bg-muted/50 p-4 rounded-lg">
@@ -554,6 +557,7 @@ const Styles = () => {
                 </Table>
               </div>
             </div>
+          </div>
           </div>
         </DialogContent>
       </Dialog>

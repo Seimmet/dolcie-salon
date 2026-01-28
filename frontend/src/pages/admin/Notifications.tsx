@@ -426,10 +426,11 @@ export default function Notifications() {
 
       {/* Pending Notification Edit Dialog */}
       <Dialog open={isPendingEditDialogOpen} onOpenChange={setIsPendingEditDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col w-[95vw]">
           <DialogHeader>
             <DialogTitle>Edit Notification</DialogTitle>
           </DialogHeader>
+          <div className="flex-1 overflow-y-auto px-1">
           <div className="space-y-4 py-4">
             {selectedPending?.type === 'EMAIL' && (
               <div className="space-y-2">
@@ -446,6 +447,7 @@ export default function Notifications() {
               />
             </div>
           </div>
+          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsPendingEditDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleSavePending} disabled={saving}>
@@ -457,11 +459,12 @@ export default function Notifications() {
       </Dialog>
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-h-[90vh] w-[95vw] max-w-2xl flex flex-col">
           <DialogHeader>
             <DialogTitle>Edit Template: {selectedTemplate?.name}</DialogTitle>
           </DialogHeader>
           
+          <div className="flex-1 overflow-y-auto px-1">
           <div className="space-y-4 py-4">
             <div className="flex items-center space-x-2">
               <Switch 
@@ -514,6 +517,7 @@ export default function Notifications() {
               </div>
               <p className="text-xs text-muted-foreground">Click a variable to insert it at the end of the content.</p>
             </div>
+          </div>
           </div>
           
           <DialogFooter>

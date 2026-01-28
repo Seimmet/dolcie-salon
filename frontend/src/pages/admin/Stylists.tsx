@@ -49,6 +49,8 @@ const stylistSchema = z.object({
   address: z.string().optional(),
   password: z.string().min(6, "Password must be at least 6 characters").optional().or(z.literal("")),
   skillLevel: z.string().min(1, "Skill level is required"),
+  surcharge: z.coerce.number().min(0, "Surcharge must be positive").default(0),
+  styleSurcharges: z.record(z.string(), z.coerce.number()).default({}),
   isActive: z.boolean().default(true),
   styleIds: z.array(z.string()).default([]),
 });
@@ -78,6 +80,7 @@ const Stylists = () => {
       address: "",
       password: "",
       skillLevel: "Intermediate",
+      surcharge: 0,
       isActive: true,
     },
   });
@@ -164,15 +167,17 @@ const Stylists = () => {
     }
   };
 
-  const openEditDialog = (stylist: Stylist) => {
+  const handleEdit = (stylist: Stylist) => {
     setEditingStylist(stylist);
     form.reset({
       fullName: stylist.fullName,
       email: stylist.email,
       phone: stylist.phone || "",
       address: stylist.address || "",
-      password: "", // Don't prefill password
+      password: "",
       skillLevel: stylist.skillLevel,
+      surcharge: Number(stylist.surcharge) || 0,
+      styleSurcharges: stylist.styleSurcharges || {},
       isActive: stylist.isActive,
       styleIds: stylist.styles?.map(s => s.id) || [],
     });
@@ -190,6 +195,7 @@ const Stylists = () => {
       skillLevel: "Intermediate",
       isActive: true,
       styleIds: [],
+      styleSurcharges: {},
     });
     setIsDialogOpen(true);
   };
@@ -266,7 +272,7 @@ const Stylists = () => {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => openEditDialog(stylist)}
+                      onClick={() => handleEdit(stylist)}
                       className="mr-2"
                     >
                       <Pencil className="h-4 w-4" />
@@ -314,7 +320,7 @@ const Stylists = () => {
 
       {/* Stylist Form Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] flex flex-col w-[95vw]">
           <DialogHeader>
             <DialogTitle>{editingStylist ? "Edit Stylist" : "Add New Stylist"}</DialogTitle>
             <DialogDescription>
@@ -323,6 +329,7 @@ const Stylists = () => {
                 : "Create a new stylist account. They will use the email and password to login."}
             </DialogDescription>
           </DialogHeader>
+          <div className="flex-1 overflow-y-auto px-1">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
@@ -420,6 +427,23 @@ const Stylists = () => {
                     </FormItem>
                   )}
                 />
+                
+                {form.watch("fullName")?.toLowerCase().includes("victoria") && (
+                  <FormField
+                    control={form.control}
+                    name="surcharge"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Surcharge ($)</FormLabel>
+                        <FormControl>
+                          <Input type="number" min="0" step="0.01" placeholder="0.00" {...field} />
+                        </FormControl>
+                        <DialogDescription>Extra fee applied to bookings for this stylist (Victoria only).</DialogDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
               </div>
 
               {editingStylist && (
@@ -512,6 +536,49 @@ const Stylists = () => {
                 )}
               />
 
+              {form.watch("fullName")?.toLowerCase().includes("victoria") && form.watch("styleIds")?.length > 0 && (
+                <div className="space-y-4 pt-4 border-t">
+                  <div className="mb-2">
+                    <FormLabel className="text-base">Style-Specific Surcharges</FormLabel>
+                    <DialogDescription>
+                       Set specific surcharge amounts for each style (overrides global surcharge).
+                    </DialogDescription>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 max-h-40 overflow-y-auto p-1">
+                    {availableStyles
+                      .filter(s => form.watch("styleIds")?.includes(s.id))
+                      .map(style => (
+                        <FormField
+                          key={`surcharge-${style.id}`}
+                          control={form.control}
+                          name={`styleSurcharges.${style.id}`}
+                          render={({ field }) => (
+                            <FormItem className="space-y-1">
+                              <FormLabel className="text-xs font-normal truncate block" title={style.name}>
+                                {style.name}
+                              </FormLabel>
+                              <FormControl>
+                                <Input 
+                                  type="number" 
+                                  min="0" 
+                                  step="0.01" 
+                                  placeholder="0.00" 
+                                  {...field} 
+                                  value={field.value ?? ""} 
+                                  onChange={(e) => {
+                                      const val = e.target.value;
+                                      field.onChange(val === "" ? undefined : parseFloat(val));
+                                  }}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      ))}
+                  </div>
+                </div>
+              )}
+
               <DialogFooter>
                 <Button type="submit" className="bg-gold hover:bg-gold-dark text-white" disabled={isSubmitting}>
                   {isSubmitting ? (
@@ -526,6 +593,7 @@ const Stylists = () => {
               </DialogFooter>
             </form>
           </Form>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

@@ -116,12 +116,26 @@ export default function Booking() {
     [stylists, selectedStylistId]
   );
 
-  const victoriaSurcharge = useMemo(() => {
-    if (selectedStylist?.fullName.toLowerCase().includes('victoria')) {
-        return 100;
+  const stylistSurcharge = useMemo(() => {
+    if (!selectedStylist || selectedStylistId === 'unassigned') return 0;
+
+    // Strict restriction: Surcharge only applies to Victoria
+    if (!selectedStylist.fullName.toLowerCase().includes('victoria')) return 0;
+
+    // Check for style-specific surcharge
+    if (selectedStyleId && (selectedStylist as any).styleSurcharges) {
+        const styleSurcharges = (selectedStylist as any).styleSurcharges;
+        if (styleSurcharges[selectedStyleId] !== undefined) {
+             const s = styleSurcharges[selectedStyleId];
+             const amount = typeof s === 'string' ? parseFloat(s) : Number(s || 0);
+             return isNaN(amount) ? 0 : amount;
+        }
     }
-    return 0;
-  }, [selectedStylist]);
+
+    const s: any = (selectedStylist as any).surcharge;
+    const amount = typeof s === 'string' ? parseFloat(s) : Number(s || 0);
+    return isNaN(amount) ? 0 : amount;
+  }, [selectedStylist, selectedStylistId, selectedStyleId]);
 
   const selectedPricing = useMemo(() => {
     if (!selectedStyleId || !selectedCategoryId) return null;
@@ -131,8 +145,8 @@ export default function Booking() {
 
   const adjustedBasePrice = useMemo(() => {
     if (!selectedPricing) return 0;
-    return Number(selectedPricing.price) + victoriaSurcharge;
-  }, [selectedPricing, victoriaSurcharge]);
+    return Number(selectedPricing.price) + stylistSurcharge;
+  }, [selectedPricing, stylistSurcharge]);
 
   const activePromo = useMemo(() => {
     if (!selectedPromoId) return null;
@@ -168,11 +182,11 @@ export default function Booking() {
     // Check for fixed promo price (handle string or number)
     const price = Number(activePromo.promoPrice);
     if (!isNaN(price) && price > 0) {
-      return price + victoriaSurcharge;
+      return price + stylistSurcharge;
     }
 
     return null;
-  }, [activePromo, selectedStyleId, selectedPricing, appliedDiscountPercentage, discountedPrice, victoriaSurcharge]);
+  }, [activePromo, selectedStyleId, selectedPricing, appliedDiscountPercentage, discountedPrice, stylistSurcharge]);
 
   // --- Initialization ---
   useEffect(() => {
@@ -806,10 +820,10 @@ export default function Booking() {
                         <span>Base price:</span>
                         <span>${selectedPricing.price}</span>
                       </div>
-                      {victoriaSurcharge > 0 && (
+                      {stylistSurcharge > 0 && (
                         <div className="flex justify-between text-sm text-muted-foreground">
-                            <span>Master Stylist Surcharge (Victoria):</span>
-                            <span>+${victoriaSurcharge}</span>
+                            <span>Stylist surcharge ({stylists.find(s => s.id === selectedStylistId)?.fullName || 'Selected stylist'}):</span>
+                            <span>+${stylistSurcharge}</span>
                         </div>
                       )}
                       
@@ -837,7 +851,7 @@ export default function Booking() {
                           </div>
                         </>
                       )}
-                      {appliedDiscountPercentage === 0 && effectivePromoPrice === null && victoriaSurcharge > 0 && (
+                      {appliedDiscountPercentage === 0 && effectivePromoPrice === null && stylistSurcharge > 0 && (
                         <div className="flex justify-between text-base font-semibold">
                             <span>Total price:</span>
                             <span>${adjustedBasePrice}</span>
@@ -1217,13 +1231,15 @@ export default function Booking() {
       </div>
 
       <AlertDialog open={showConsentDialog} onOpenChange={setShowConsentDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Stay in the loop?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you don't want to receive notifications from {SALON_INFO.name} for updates and bonuses?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
+        <AlertDialogContent className="max-h-[90vh] w-[95vw] sm:max-w-lg flex flex-col">
+          <div className="flex-1 overflow-y-auto px-1">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Stay in the loop?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you don't want to receive notifications from {SALON_INFO.name} for updates and bonuses?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => {
                 setShowConsentDialog(false);
@@ -1239,13 +1255,15 @@ export default function Booking() {
       </AlertDialog>
 
       <AlertDialog open={showAuthConsentDialog} onOpenChange={setShowAuthConsentDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Stay in the loop?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you don't want to receive notifications from {SALON_INFO.name} for updates and bonuses?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
+        <AlertDialogContent className="max-h-[90vh] w-[95vw] sm:max-w-lg flex flex-col">
+          <div className="flex-1 overflow-y-auto px-1">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Stay in the loop?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you don't want to receive notifications from {SALON_INFO.name} for updates and bonuses?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => {
               setAuthSmsConsent(false);

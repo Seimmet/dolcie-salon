@@ -11,6 +11,8 @@ export interface Stylist {
   phone?: string;
   address?: string;
   skillLevel: string;
+  surcharge?: number;
+  styleSurcharges?: Record<string, number>;
   isActive: boolean;
   createdAt: string;
   pricing?: StylistPricing[];

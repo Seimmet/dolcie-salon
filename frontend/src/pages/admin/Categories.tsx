@@ -249,7 +249,7 @@ const Categories = () => {
       )}
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[425px] max-h-[90vh] flex flex-col w-[95vw]">
           <DialogHeader>
             <DialogTitle>{editingCategory ? "Edit Variation" : "Add New Variation"}</DialogTitle>
             <DialogDescription>
@@ -258,6 +258,7 @@ const Categories = () => {
                 : "Create a new variation."}
             </DialogDescription>
           </DialogHeader>
+          <div className="flex-1 overflow-y-auto px-1">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
@@ -287,6 +288,7 @@ const Categories = () => {
               </DialogFooter>
             </form>
           </Form>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

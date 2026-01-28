@@ -211,10 +211,11 @@ export default function GallerySettings() {
         )}
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent>
+          <DialogContent className="sm:max-w-[425px] max-h-[90vh] flex flex-col w-[95vw]">
             <DialogHeader>
               <DialogTitle>{editingItem ? "Edit Item" : "Add New Item"}</DialogTitle>
             </DialogHeader>
+            <div className="flex-1 overflow-y-auto px-1">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid gap-2">
                 <Label htmlFor="title">Title</Label>
@@ -271,6 +272,7 @@ export default function GallerySettings() {
                 </Button>
               </DialogFooter>
             </form>
+            </div>
           </DialogContent>
         </Dialog>
       </CardContent>

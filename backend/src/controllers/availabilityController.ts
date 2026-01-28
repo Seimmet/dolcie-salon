@@ -14,7 +14,7 @@ const DEFAULT_BUSINESS_HOURS = {
 export const getAvailability = async (req: Request, res: Response): Promise<void> => {
   try {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-    const { date, startDate, endDate, categoryId, styleId, stylistId, duration } = req.query;
+    const { date, startDate, endDate, categoryId, styleId, stylistId, duration, excludeBookingId } = req.query;
     
     // Determine date range
     let start: Date;
@@ -73,14 +73,20 @@ export const getAvailability = async (req: Request, res: Response): Promise<void
     // We fetch ALL bookings (even for other stylists) if we need to calculate global capacity
     // But if a specific stylist is requested, we theoretically only care about them + unassigned
     // To be safe and simple, fetch all active bookings in range
-    const bookings = await prisma.booking.findMany({
-        where: {
-            bookingDate: {
-                gte: start,
-                lte: end
-            },
-            status: { not: 'cancelled' }
+    const whereBookings: any = {
+        bookingDate: {
+            gte: start,
+            lte: end
         },
+        status: { not: 'cancelled' }
+    };
+
+    if (excludeBookingId) {
+        whereBookings.id = { not: excludeBookingId as string };
+    }
+
+    const bookings = await prisma.booking.findMany({
+        where: whereBookings,
         select: {
             id: true,
             bookingDate: true,

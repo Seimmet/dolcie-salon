@@ -32,7 +32,7 @@ export const getBookings = async (req: Request, res: Response): Promise<void> =>
         style: { select: { name: true } }, // Formerly Category (Main Style)
         stylist: { 
             include: { 
-                user: { select: { fullName: true } }
+                user: { select: { id: true, fullName: true } }
             } 
         },
         promo: {
@@ -75,9 +75,30 @@ export const getBookings = async (req: Request, res: Response): Promise<void> =>
             }
         }
 
-        // Add Victoria Surcharge
-        if (booking.stylist?.user?.fullName?.toLowerCase().includes('victoria')) {
-             price += 100;
+        // Add Stylist Surcharge (Dynamic)
+        if (booking.stylistId) {
+             const stylist = await prisma.stylist.findUnique({
+                 where: { id: booking.stylistId },
+                 include: { user: { select: { fullName: true } } }
+             });
+             
+             if (stylist && stylist.user.fullName.toLowerCase().includes('victoria')) {
+                 let surcharge = 0;
+                 
+                 // Check for style-specific surcharge first
+                 if (stylist.styleSurcharges && booking.styleId) {
+                     const styleSurcharges = stylist.styleSurcharges as Record<string, number>;
+                     if (styleSurcharges[booking.styleId] !== undefined) {
+                         surcharge = Number(styleSurcharges[booking.styleId]);
+                     } else if (stylist.surcharge) {
+                         surcharge = Number(stylist.surcharge);
+                     }
+                 } else if (stylist.surcharge) {
+                     surcharge = Number(stylist.surcharge);
+                 }
+                 
+                 price += surcharge;
+             }
         }
         
         return {
@@ -412,7 +433,7 @@ export const updateBooking = async (req: Request, res: Response): Promise<void> 
                         bookingDate: parsedDate,
                         bookingTime: parsedTime,
                         status: { not: 'cancelled' },
-                        id: { not: id } // Exclude current booking
+                        id: { not: id }
                     }
                 });
 

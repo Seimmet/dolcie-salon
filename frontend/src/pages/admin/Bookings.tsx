@@ -206,13 +206,14 @@ function RecordPaymentDialog({ booking, onRecordPayment }: { booking: Booking; o
             Record Payment
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] max-h-[90vh] flex flex-col w-[95vw]">
         <DialogHeader>
           <DialogTitle>Record Payment</DialogTitle>
           <DialogDescription>
             Record the final payment for {booking.customer?.fullName || 'Guest'}.
           </DialogDescription>
         </DialogHeader>
+        <div className="flex-1 overflow-y-auto px-1">
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
             <Label className="text-right">Service</Label>
@@ -305,6 +306,7 @@ function RecordPaymentDialog({ booking, onRecordPayment }: { booking: Booking; o
           )}
 
         </div>
+        </div>
         <DialogFooter>
           {method === 'cash' && (
              <Button type="submit" onClick={handleCashSubmit}>Confirm Cash Payment</Button>
@@ -334,7 +336,8 @@ function RescheduleDialog({ booking, onReschedule }: { booking: Booking; onResch
                         booking.styleId || undefined,
                         booking.categoryId || undefined,
                         booking.stylistId || undefined,
-                        duration
+                        duration,
+                        booking.id
                     );
                     setSlots(availableSlots);
                 } catch (error) {
@@ -363,13 +366,14 @@ function RescheduleDialog({ booking, onReschedule }: { booking: Booking; onResch
             <DialogTrigger asChild>
                 <Button size="sm" variant="outline">Reschedule</Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-[425px] max-h-[90vh] flex flex-col w-[95vw]">
                 <DialogHeader>
                     <DialogTitle>Reschedule Appointment</DialogTitle>
                     <DialogDescription>
                         Select a new date and time for {booking.customer?.fullName || 'Guest'}.
                     </DialogDescription>
                 </DialogHeader>
+                <div className="flex-1 overflow-y-auto px-1">
                 <div className="grid gap-4 py-4">
                     <div className="flex justify-center">
                         <Calendar
@@ -405,6 +409,7 @@ function RescheduleDialog({ booking, onReschedule }: { booking: Booking; onResch
                              )}
                         </div>
                     )}
+                </div>
                 </div>
                 <DialogFooter>
                     <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
@@ -616,7 +621,7 @@ export default function Bookings() {
                     <div className={`p-4 md:w-48 flex flex-col justify-center items-center md:items-start border-b md:border-b-0 md:border-r bg-muted/30`}>
                       {!date && (
                         <span className="text-sm font-medium text-muted-foreground mb-1">
-                             {format(parseISO(booking.bookingDate), "MMM d")}
+                            {format(parseISO(booking.bookingDate), "MMM d")}
                         </span>
                       )}
                       <span className="text-2xl font-bold">
@@ -624,7 +629,8 @@ export default function Bookings() {
                       </span>
                       <Badge 
                         variant="secondary" 
-                        className={`mt-2 ${getStatusColor(booking.status)}`}>
+                        className={`mt-2 ${getStatusColor(booking.status)}`}
+                      >
                         {booking.status.toUpperCase()}
                       </Badge>
                     </div>
@@ -747,13 +753,15 @@ export default function Bookings() {
                                          Cancel
                                      </Button>
                                    </AlertDialogTrigger>
-                                   <AlertDialogContent>
-                                     <AlertDialogHeader>
-                                       <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                       <AlertDialogDescription>
-                                         This action will cancel the booking. This cannot be easily undone.
-                                       </AlertDialogDescription>
-                                     </AlertDialogHeader>
+                                   <AlertDialogContent className="max-h-[90vh] w-[95vw] sm:max-w-lg flex flex-col">
+                                     <div className="flex-1 overflow-y-auto px-1">
+                                       <AlertDialogHeader>
+                                         <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                         <AlertDialogDescription>
+                                           This action will cancel the booking. This cannot be easily undone.
+                                         </AlertDialogDescription>
+                                       </AlertDialogHeader>
+                                     </div>
                                      <AlertDialogFooter>
                                        <AlertDialogCancel>Dismiss</AlertDialogCancel>
                                        <AlertDialogAction onClick={() => handleStatusChange(booking.id, 'cancelled')} className="bg-red-600 hover:bg-red-700">
