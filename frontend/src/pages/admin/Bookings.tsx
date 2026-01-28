@@ -449,6 +449,25 @@ export default function Bookings() {
     },
   });
 
+  const formatBookingTimeDisplay = (bookingTime: string) => {
+    try {
+      if (/^\d{2}:\d{2}(:\d{2})?$/.test(bookingTime)) {
+        const [hh, mm] = bookingTime.split(":").map(Number);
+        const d = new Date(0);
+        d.setHours(hh, mm);
+        return format(d, "h:mm a");
+      }
+      const d = new Date(bookingTime);
+      const hours = d.getUTCHours();
+      const minutes = d.getUTCMinutes();
+      const local = new Date(0);
+      local.setHours(hours, minutes);
+      return format(local, "h:mm a");
+    } catch {
+      return bookingTime;
+    }
+  };
+
   const handleAssignStylist = (bookingId: string, stylistId: string) => {
     updateBookingMutation.mutate({ id: bookingId, data: { stylistId } });
   };
@@ -482,13 +501,13 @@ export default function Bookings() {
       updateBookingMutation.mutate({ id: bookingId, data: { date, time } });
   };
 
-  // Filter bookings for selected date or current month
+  // Filter bookings for selected date or upcoming dates
   const selectedDateBookings = bookings.filter((booking) => {
     const bookingDate = parseISO(booking.bookingDate);
     if (date) {
-        return isSameDay(bookingDate, date);
+      return isSameDay(bookingDate, date);
     }
-    return isSameMonth(bookingDate, currentMonth);
+    return bookingDate >= startOfDay(new Date());
   });
   
   // Sort by time
@@ -574,7 +593,7 @@ export default function Bookings() {
         <div className="md:col-span-8 lg:col-span-9 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-xl font-semibold">
-              {date ? format(date, "MMMM d, yyyy") : `All Bookings in ${format(currentMonth, "MMMM yyyy")}`}
+              {date ? format(date, "MMMM d, yyyy") : `Upcoming Bookings`}
             </h3>
             <Badge variant="outline" className="text-base">
               {selectedDateBookings.length} Bookings
@@ -585,7 +604,7 @@ export default function Bookings() {
             <Card className="bg-muted/50 border-dashed">
               <CardContent className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
                 <CalendarIcon className="h-12 w-12 mb-4 opacity-50" />
-                <p>No bookings found for {date ? "this date" : "this month"}.</p>
+                <p>No bookings found for {date ? "this date" : "upcoming dates"}.</p>
               </CardContent>
             </Card>
           ) : (
@@ -601,7 +620,7 @@ export default function Bookings() {
                         </span>
                       )}
                       <span className="text-2xl font-bold">
-                         {format(parseISO(booking.bookingTime), "h:mm a")}
+                        {formatBookingTimeDisplay(booking.bookingTime)}
                       </span>
                       <Badge 
                         variant="secondary" 
