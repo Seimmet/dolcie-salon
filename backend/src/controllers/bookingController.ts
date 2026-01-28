@@ -12,6 +12,25 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_PLACEHOLDER'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 
+const getStylistSurcharge = (stylist: any, styleId: string | null): number => {
+    if (!stylist) return 0;
+    
+    // Check for style-specific surcharge first
+    if (stylist.styleSurcharges && styleId) {
+        const styleSurcharges = stylist.styleSurcharges as Record<string, number>;
+        if (styleSurcharges[styleId] !== undefined) {
+            return Number(styleSurcharges[styleId]);
+        }
+    }
+    
+    // Fallback to base surcharge
+    if (stylist.surcharge) {
+        return Number(stylist.surcharge);
+    }
+    
+    return 0;
+};
+
 export const getBookings = async (req: Request, res: Response): Promise<void> => {
   try {
     const userRole = (req as any).user?.role;
@@ -76,29 +95,8 @@ export const getBookings = async (req: Request, res: Response): Promise<void> =>
         }
 
         // Add Stylist Surcharge (Dynamic)
-        if (booking.stylistId) {
-             const stylist = await prisma.stylist.findUnique({
-                 where: { id: booking.stylistId },
-                 include: { user: { select: { fullName: true } } }
-             });
-             
-             if (stylist && stylist.user.fullName.toLowerCase().includes('victoria')) {
-                 let surcharge = 0;
-                 
-                 // Check for style-specific surcharge first
-                 if (stylist.styleSurcharges && booking.styleId) {
-                     const styleSurcharges = stylist.styleSurcharges as Record<string, number>;
-                     if (styleSurcharges[booking.styleId] !== undefined) {
-                         surcharge = Number(styleSurcharges[booking.styleId]);
-                     } else if (stylist.surcharge) {
-                         surcharge = Number(stylist.surcharge);
-                     }
-                 } else if (stylist.surcharge) {
-                     surcharge = Number(stylist.surcharge);
-                 }
-                 
-                 price += surcharge;
-             }
+        if (booking.stylist) {
+             price += getStylistSurcharge(booking.stylist, booking.styleId);
         }
         
         return {
@@ -528,9 +526,9 @@ export const updateBooking = async (req: Request, res: Response): Promise<void> 
              if (pricing) price = Number(pricing.price);
         }
 
-        // Add Victoria Surcharge
-        if (b.stylist?.user?.fullName?.toLowerCase().includes('victoria')) {
-             price += 100;
+        // Add Stylist Surcharge
+        if (b.stylist) {
+             price += getStylistSurcharge(b.stylist, b.styleId);
         }
 
         const responseBooking = {
