@@ -627,7 +627,10 @@ export const checkInBooking = async (req: Request, res: Response): Promise<void>
             data: { status: 'checked_in' }
         });
 
-        res.json(updatedBooking);
+        res.json({
+            ...updatedBooking,
+            bookingDate: updatedBooking.bookingDate ? updatedBooking.bookingDate.toISOString().split('T')[0] : null
+        });
 
     } catch (error) {
         console.error('Check-in error:', error);
@@ -750,7 +753,10 @@ export const addBookingPayment = async (req: Request, res: Response): Promise<vo
             }
         }
 
-        res.json(booking);
+        res.json(booking ? {
+            ...booking,
+            bookingDate: booking.bookingDate ? booking.bookingDate.toISOString().split('T')[0] : null
+        } : null);
     } catch (error) {
         console.error('Error adding payment:', error);
         res.status(500).json({ message: 'Error adding payment' });
