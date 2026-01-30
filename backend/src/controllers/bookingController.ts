@@ -101,6 +101,7 @@ export const getBookings = async (req: Request, res: Response): Promise<void> =>
         
         return {
             ...booking,
+            bookingDate: booking.bookingDate ? booking.bookingDate.toISOString().split('T')[0] : null,
             // Map for frontend compatibility or new structure
             serviceName: booking.category?.name, // Variation
             styleName: booking.style?.name, // Main Style
@@ -533,6 +534,7 @@ export const updateBooking = async (req: Request, res: Response): Promise<void> 
 
         const responseBooking = {
             ...updatedBooking,
+            bookingDate: updatedBooking.bookingDate ? updatedBooking.bookingDate.toISOString().split('T')[0] : null,
             serviceName: b.category?.name,
             styleName: b.style?.name,
             price
