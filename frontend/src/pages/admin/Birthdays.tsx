@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { Mail, MessageSquare, Calendar, Loader2 } from 'lucide-react';
+import { Mail, MessageSquare, Calendar, Loader2, Gift } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -14,6 +14,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { motion } from "framer-motion";
 
 import { birthdayService, User } from '@/services/birthdayService';
 
@@ -75,24 +76,36 @@ export default function Birthdays() {
     };
 
     return (
-        <div className="space-y-6">
+        <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="space-y-6"
+        >
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Birthdays</h1>
+                    <h1 className="text-3xl font-bold tracking-tight font-serif">Birthdays</h1>
                     <p className="text-muted-foreground">Upcoming customer birthdays for this month and next.</p>
                 </div>
-                <Button variant="outline" onClick={loadBirthdays} disabled={loading}>
+                <Button variant="outline" onClick={loadBirthdays} disabled={loading} className="border-border hover:bg-muted/50">
                     <Calendar className="mr-2 h-4 w-4" />
                     Refresh
                 </Button>
             </div>
 
-            <Card>
+            <Card className="border-border shadow-card hover:shadow-lg transition-all duration-300">
                 <CardHeader>
-                    <CardTitle>Upcoming Birthdays</CardTitle>
-                    <CardDescription>
-                        Send automated birthday greetings to your customers.
-                    </CardDescription>
+                    <div className="flex items-center gap-2">
+                        <div className="p-2 bg-primary/10 rounded-full">
+                            <Gift className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                            <CardTitle className="font-serif">Upcoming Birthdays</CardTitle>
+                            <CardDescription>
+                                Send automated birthday greetings to your customers.
+                            </CardDescription>
+                        </div>
+                    </div>
                 </CardHeader>
                 <CardContent>
                     {loading ? (
@@ -100,74 +113,87 @@ export default function Birthdays() {
                             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                         </div>
                     ) : users.length === 0 ? (
-                        <div className="text-center py-8 text-muted-foreground">
-                            No upcoming birthdays found.
+                        <div className="text-center py-12 text-muted-foreground bg-muted/20 rounded-lg border border-dashed border-border">
+                            <Gift className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                            <p>No upcoming birthdays found.</p>
                         </div>
                     ) : (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Customer</TableHead>
-                                    <TableHead>Birthday</TableHead>
-                                    <TableHead>Contact</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {users.map((user) => (
-                                    <TableRow key={user.id}>
-                                        <TableCell>
-                                            <div className="font-medium">{user.fullName}</div>
-                                            <div className="text-xs text-muted-foreground">{user.email}</div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex items-center gap-2">
-                                                <span>{getMonthName(user.birthMonth!)} {user.birthDay}</span>
-                                                {isToday(user.birthDay!, user.birthMonth!) && (
-                                                    <Badge variant="default" className="bg-green-500 hover:bg-green-600">Today!</Badge>
-                                                )}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="text-sm">
-                                                {user.phone || '-'}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="text-right space-x-2">
-                                            <Button 
-                                                variant="outline" 
-                                                size="sm"
-                                                onClick={() => handleSendGreeting(user.id, 'email')}
-                                                disabled={sendingMap[`${user.id}-email`]}
-                                            >
-                                                {sendingMap[`${user.id}-email`] ? (
-                                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                                ) : (
-                                                    <Mail className="h-4 w-4 mr-1" />
-                                                )}
-                                                Email
-                                            </Button>
-                                            <Button 
-                                                variant="outline" 
-                                                size="sm"
-                                                onClick={() => handleSendGreeting(user.id, 'sms')}
-                                                disabled={!user.phone || sendingMap[`${user.id}-sms`]}
-                                            >
-                                                {sendingMap[`${user.id}-sms`] ? (
-                                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                                ) : (
-                                                    <MessageSquare className="h-4 w-4 mr-1" />
-                                                )}
-                                                SMS
-                                            </Button>
-                                        </TableCell>
+                        <div className="rounded-md border border-border overflow-hidden">
+                            <Table>
+                                <TableHeader className="bg-muted/40">
+                                    <TableRow className="hover:bg-transparent border-border">
+                                        <TableHead>Customer</TableHead>
+                                        <TableHead>Birthday</TableHead>
+                                        <TableHead>Contact</TableHead>
+                                        <TableHead className="text-right">Actions</TableHead>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+                                </TableHeader>
+                                <TableBody>
+                                    {users.map((user, index) => (
+                                        <motion.tr 
+                                            key={user.id}
+                                            initial={{ opacity: 0, x: -20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: index * 0.05 }}
+                                            className="border-border hover:bg-muted/50 transition-colors"
+                                        >
+                                            <TableCell>
+                                                <div className="font-medium font-serif">{user.fullName}</div>
+                                                <div className="text-xs text-muted-foreground">{user.email}</div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-medium">{getMonthName(user.birthMonth!)} {user.birthDay}</span>
+                                                    {isToday(user.birthDay!, user.birthMonth!) && (
+                                                        <Badge variant="default" className="bg-primary text-primary-foreground hover:bg-primary/90 animate-pulse shadow-sm">Today!</Badge>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="text-sm font-mono text-muted-foreground">
+                                                    {user.phone || '-'}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    <Button 
+                                                        variant="outline" 
+                                                        size="sm"
+                                                        onClick={() => handleSendGreeting(user.id, 'email')}
+                                                        disabled={sendingMap[`${user.id}-email`]}
+                                                        className="h-8 border-border hover:text-primary hover:border-primary/50 transition-colors"
+                                                    >
+                                                        {sendingMap[`${user.id}-email`] ? (
+                                                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                                        ) : (
+                                                            <Mail className="h-3.5 w-3.5 mr-1.5" />
+                                                        )}
+                                                        Email
+                                                    </Button>
+                                                    <Button 
+                                                        variant="outline" 
+                                                        size="sm"
+                                                        onClick={() => handleSendGreeting(user.id, 'sms')}
+                                                        disabled={!user.phone || sendingMap[`${user.id}-sms`]}
+                                                        className="h-8 border-border hover:text-primary hover:border-primary/50 transition-colors"
+                                                    >
+                                                        {sendingMap[`${user.id}-sms`] ? (
+                                                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                                        ) : (
+                                                            <MessageSquare className="h-3.5 w-3.5 mr-1.5" />
+                                                        )}
+                                                        SMS
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                        </motion.tr>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
                     )}
                 </CardContent>
             </Card>
-        </div>
+        </motion.div>
     );
 }

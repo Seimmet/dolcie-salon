@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { format, parseISO, isSameDay, isSameMonth, startOfDay } from "date-fns";
-import { DayPicker } from "react-day-picker";
+import { format, parseISO, isSameDay, startOfDay } from "date-fns";
+import { motion, AnimatePresence } from "framer-motion";
 import { Calendar } from "@/components/ui/calendar";
 import { bookingService, Booking, TimeSlot } from "@/services/bookingService";
 import { stylistService } from "@/services/stylistService";
@@ -11,7 +11,6 @@ import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -25,7 +24,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Loader2, Calendar as CalendarIcon, DollarSign, CheckCircle, User } from "lucide-react";
+import { Loader2, Calendar as CalendarIcon, DollarSign, CheckCircle, User, Clock, Scissors, Phone, Mail, X, RefreshCw } from "lucide-react";
 
 import {
   AlertDialog,
@@ -50,6 +49,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { cn } from "@/lib/utils";
 
 // Initialize Stripe safely
 const getStripe = () => {
@@ -99,7 +99,7 @@ function StripePaymentForm({ amount, onSuccess }: { amount: number; onSuccess: (
         <form onSubmit={handleSubmit} className="space-y-4">
             <PaymentElement />
             {errorMessage && <div className="text-red-500 text-sm">{errorMessage}</div>}
-            <Button type="submit" disabled={!stripe || isLoading} className="w-full">
+            <Button type="submit" disabled={!stripe || isLoading} className="w-full bg-gradient-gold hover:opacity-90 text-white shadow-md transition-all">
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 Pay ${amount.toFixed(2)}
             </Button>
@@ -201,14 +201,14 @@ function RecordPaymentDialog({ booking, onRecordPayment }: { booking: Booking; o
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" variant="outline">
+        <Button size="sm" variant="outline" className="border-green-200 text-green-700 hover:bg-green-50 hover:text-green-800 transition-colors">
             <DollarSign className="h-4 w-4 mr-2" />
             Record Payment
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px] max-h-[90vh] flex flex-col w-[95vw]">
         <DialogHeader>
-          <DialogTitle>Record Payment</DialogTitle>
+          <DialogTitle className="font-serif">Record Payment</DialogTitle>
           <DialogDescription>
             Record the final payment for {booking.customer?.fullName || 'Guest'}.
           </DialogDescription>
@@ -287,7 +287,7 @@ function RecordPaymentDialog({ booking, onRecordPayment }: { booking: Booking; o
           {method === 'stripe' && (
               <div className="col-span-4 mt-4 border-t pt-4">
                   {!clientSecret ? (
-                      <Button onClick={handleInitializeStripe} disabled={isInitializingStripe || amount <= 0} className="w-full">
+                      <Button onClick={handleInitializeStripe} disabled={isInitializingStripe || amount <= 0} className="w-full bg-primary/90 hover:bg-primary">
                           {isInitializingStripe ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                           Proceed to Payment (${totalCharge.toFixed(2)})
                       </Button>
@@ -309,7 +309,7 @@ function RecordPaymentDialog({ booking, onRecordPayment }: { booking: Booking; o
         </div>
         <DialogFooter>
           {method === 'cash' && (
-             <Button type="submit" onClick={handleCashSubmit}>Confirm Cash Payment</Button>
+             <Button type="submit" onClick={handleCashSubmit} className="bg-green-600 hover:bg-green-700 text-white">Confirm Cash Payment</Button>
           )}
         </DialogFooter>
       </DialogContent>
@@ -364,11 +364,14 @@ function RescheduleDialog({ booking, onReschedule }: { booking: Booking; onResch
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button size="sm" variant="outline">Reschedule</Button>
+                <Button size="sm" variant="outline" className="border-blue-200 text-blue-700 hover:bg-blue-50 hover:text-blue-800 transition-colors">
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Reschedule
+                </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px] max-h-[90vh] flex flex-col w-[95vw]">
                 <DialogHeader>
-                    <DialogTitle>Reschedule Appointment</DialogTitle>
+                    <DialogTitle className="font-serif">Reschedule Appointment</DialogTitle>
                     <DialogDescription>
                         Select a new date and time for {booking.customer?.fullName || 'Guest'}.
                     </DialogDescription>
@@ -413,7 +416,7 @@ function RescheduleDialog({ booking, onReschedule }: { booking: Booking; onResch
                 </div>
                 <DialogFooter>
                     <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-                    <Button onClick={handleConfirm} disabled={!date || !time}>Confirm</Button>
+                    <Button onClick={handleConfirm} disabled={!date || !time} className="bg-primary/90 hover:bg-primary">Confirm</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -547,9 +550,14 @@ export default function Bookings() {
   }
 
   return (
-    <div className="space-y-6">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="space-y-6"
+    >
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Bookings Management</h2>
+        <h2 className="text-3xl font-bold tracking-tight font-serif text-foreground">Bookings Management</h2>
         <p className="text-muted-foreground">
           View and manage customer appointments.
         </p>
@@ -558,15 +566,15 @@ export default function Bookings() {
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
         {/* Calendar View */}
         <div className="md:col-span-4 lg:col-span-3">
-          <Card>
+          <Card className="border-none shadow-md overflow-hidden">
             <CardContent className="p-0">
-              <DayPicker
+              <Calendar
                 mode="single"
                 selected={date}
                 onSelect={setDate}
                 month={currentMonth}
                 onMonthChange={setCurrentMonth}
-                className="p-3 w-full flex justify-center"
+                className="p-3 w-full flex justify-center pointer-events-auto"
                 modifiers={{
                     booked: bookedDays
                 }}
@@ -577,7 +585,12 @@ export default function Bookings() {
             </CardContent>
           </Card>
           
-          <div className="mt-4 space-y-2">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="mt-4 space-y-2 bg-white/50 p-4 rounded-lg border border-border/50 backdrop-blur-sm"
+          >
             <h3 className="font-semibold text-sm text-muted-foreground mb-2">Legend</h3>
              <div className="flex items-center text-sm">
                 <span className="w-3 h-3 bg-yellow-100 border border-yellow-200 rounded-full mr-2"></span>
@@ -591,203 +604,241 @@ export default function Bookings() {
                 <span className="w-3 h-3 bg-green-100 border border-green-200 rounded-full mr-2"></span>
                 <span>Completed</span>
              </div>
-          </div>
+          </motion.div>
         </div>
 
         {/* Bookings List */}
         <div className="md:col-span-8 lg:col-span-9 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-xl font-semibold">
+            <h3 className="text-xl font-semibold font-serif">
               {date ? format(date, "MMMM d, yyyy") : `Upcoming Bookings`}
             </h3>
-            <Badge variant="outline" className="text-base">
+            <Badge variant="outline" className="text-base px-3 py-1">
               {selectedDateBookings.length} Bookings
             </Badge>
           </div>
 
+          <AnimatePresence mode="popLayout">
           {selectedDateBookings.length === 0 ? (
-            <Card className="bg-muted/50 border-dashed">
-              <CardContent className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
-                <CalendarIcon className="h-12 w-12 mb-4 opacity-50" />
-                <p>No bookings found for {date ? "this date" : "upcoming dates"}.</p>
-              </CardContent>
-            </Card>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+            >
+              <Card className="bg-muted/30 border-dashed border-2 shadow-none">
+                <CardContent className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
+                  <CalendarIcon className="h-12 w-12 mb-4 opacity-20" />
+                  <p className="text-lg font-medium">No bookings found</p>
+                  <p className="text-sm opacity-70">There are no appointments for {date ? "this date" : "upcoming dates"}.</p>
+                </CardContent>
+              </Card>
+            </motion.div>
           ) : (
             <div className="grid gap-4">
-              {selectedDateBookings.map((booking) => (
-                <Card key={booking.id} className="overflow-hidden">
-                  <div className="flex flex-col md:flex-row md:items-center">
-                    {/* Time & Status Strip */}
-                    <div className={`p-4 md:w-48 flex flex-col justify-center items-center md:items-start border-b md:border-b-0 md:border-r bg-muted/30`}>
-                      {!date && (
-                        <span className="text-sm font-medium text-muted-foreground mb-1">
-                            {format(parseISO(booking.bookingDate), "MMM d")}
+              {selectedDateBookings.map((booking, index) => (
+                <motion.div
+                  key={booking.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
+                >
+                  <Card className="overflow-hidden border border-border shadow-card hover:shadow-lg transition-all duration-300 bg-card">
+                    <div className="flex flex-col md:flex-row md:items-stretch">
+                      {/* Time & Status Strip */}
+                      <div className={cn(
+                        "p-4 md:w-48 flex flex-col justify-center items-center md:items-start border-b md:border-b-0 md:border-r bg-muted/30",
+                        booking.status === 'completed' && "bg-green-50/50"
+                      )}>
+                        {!date && (
+                          <span className="text-sm font-medium text-muted-foreground mb-1 flex items-center gap-1">
+                              <CalendarIcon className="w-3 h-3" />
+                              {format(parseISO(booking.bookingDate), "MMM d")}
+                          </span>
+                        )}
+                        <span className="text-2xl font-bold font-serif text-foreground/80 flex items-center gap-1">
+                          <Clock className="w-5 h-5 opacity-50" />
+                          {formatBookingTimeDisplay(booking.bookingTime)}
                         </span>
-                      )}
-                      <span className="text-2xl font-bold">
-                        {formatBookingTimeDisplay(booking.bookingTime)}
-                      </span>
-                      <Badge 
-                        variant="secondary" 
-                        className={`mt-2 ${getStatusColor(booking.status)}`}
-                      >
-                        {booking.status.toUpperCase()}
-                      </Badge>
-                    </div>
-
-                    {/* Booking Details */}
-                    <div className="p-4 flex-1 space-y-4 md:space-y-0 md:grid md:grid-cols-2 gap-4">
-                      <div>
-                        {booking.style && (
-                          <div className="text-sm font-semibold text-primary uppercase tracking-wide mb-1">
-                            {booking.style.name}
-                          </div>
-                        )}
-                        <h4 className="font-semibold text-lg">{booking.category?.name}</h4>
-                        {booking.promo && (
-                          <div className="mt-1 inline-flex items-center rounded-full bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 border border-emerald-200">
-                            Promo: {booking.promo.title || 'Special Offer'} (
-                            {booking.promo.discountPercentage
-                              ? `${booking.promo.discountPercentage}% off`
-                              : `$${booking.promo.promoPrice} promo`}
-                            )
-                          </div>
-                        )}
-                        <div className="text-sm text-muted-foreground space-y-1 mt-1">
-                          <div className="flex items-center">
-                            <User className="h-4 w-4 mr-2" />
-                            {booking.customer?.fullName || 'Guest'}
-                          </div>
-                          <div className="pl-6">{booking.customer?.phone || 'No phone'}</div>
-                          <div className="pl-6">{booking.customer?.email || 'No email'}</div>
-                        </div>
-                        
-                         {/* Payment Summary */}
-                         <div className="mt-2 pt-2 border-t text-sm">
-                            <div className="flex justify-between items-center">
-                               <span className="text-muted-foreground">Total Paid:</span>
-                               <span className="font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full border border-green-100">
-                                 ${(booking.payments?.reduce((sum, p) => sum + Number(p.amount), 0) || 0).toFixed(2)}
-                               </span>
-                            </div>
-                         </div>
+                        <Badge 
+                          variant="secondary" 
+                          className={cn("mt-2 capitalize shadow-sm", getStatusColor(booking.status))}
+                        >
+                          {booking.status.replace('_', ' ')}
+                        </Badge>
                       </div>
 
-                      <div className="space-y-4">
-                         {/* Stylist Assignment */}
-                        <div className="space-y-1">
-                          <label className="text-xs font-medium text-muted-foreground uppercase">
-                            Assigned Stylist
-                          </label>
-                          {isAdmin ? (
-                            <Select
-                              value={booking.stylistId || "unassigned"}
-                              onValueChange={(value) => handleAssignStylist(booking.id, value)}
-                            >
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select Stylist" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="unassigned">Unassigned</SelectItem>
-                                {stylists.map((stylist: any) => (
-                                  <SelectItem key={stylist.id} value={stylist.id}>
-                                    {stylist.fullName || stylist.user?.fullName}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          ) : (
-                            <div className="p-2 border rounded-md bg-muted/50 text-sm font-medium">
-                              {booking.stylist ? (booking.stylist.user?.fullName || "Assigned") : "Unassigned"}
+                      {/* Booking Details */}
+                      <div className="p-5 flex-1 space-y-4 md:space-y-0 md:grid md:grid-cols-2 gap-6">
+                        <div className="space-y-3">
+                          <div>
+                            {booking.style && (
+                              <div className="text-xs font-bold text-primary uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                                <Scissors className="w-3 h-3" />
+                                {booking.style.name}
+                              </div>
+                            )}
+                            <h4 className="font-semibold text-xl font-serif text-foreground">{booking.category?.name}</h4>
+                            {booking.promo && (
+                              <div className="mt-2 inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700 border border-emerald-200 shadow-sm">
+                                <DollarSign className="w-3 h-3 mr-1" />
+                                Promo: {booking.promo.title || 'Special Offer'} (
+                                {booking.promo.discountPercentage
+                                  ? `${booking.promo.discountPercentage}% off`
+                                  : `$${booking.promo.promoPrice} promo`}
+                                )
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="text-sm text-muted-foreground space-y-2">
+                            <div className="flex items-center gap-2 p-1.5 rounded-md hover:bg-muted/50 transition-colors">
+                              <User className="h-4 w-4 text-primary/70" />
+                              <span className="font-medium text-foreground/80">{booking.customer?.fullName || 'Guest'}</span>
                             </div>
-                          )}
+                            <div className="flex items-center gap-2 p-1.5 rounded-md hover:bg-muted/50 transition-colors">
+                              <Phone className="h-4 w-4 text-primary/70" />
+                              <span>{booking.customer?.phone || 'No phone'}</span>
+                            </div>
+                            <div className="flex items-center gap-2 p-1.5 rounded-md hover:bg-muted/50 transition-colors">
+                              <Mail className="h-4 w-4 text-primary/70" />
+                              <span className="truncate max-w-[200px]">{booking.customer?.email || 'No email'}</span>
+                            </div>
+                          </div>
+                          
+                           {/* Payment Summary */}
+                           <div className="mt-3 pt-3 border-t border-border/50 text-sm">
+                              <div className="flex justify-between items-center bg-muted/20 p-2 rounded-lg">
+                                 <span className="text-muted-foreground font-medium">Total Paid:</span>
+                                 <span className="font-bold text-green-700 bg-green-100 px-2.5 py-0.5 rounded-full border border-green-200">
+                                   ${(booking.payments?.reduce((sum, p) => sum + Number(p.amount), 0) || 0).toFixed(2)}
+                                 </span>
+                              </div>
+                           </div>
                         </div>
 
-                        {/* Actions */}
-                        <div className="flex flex-wrap gap-2">
-                           {/* Status Actions */}
-                           {booking.status === 'booked' && (
-                               <Button size="sm" variant="outline" onClick={() => handleStatusChange(booking.id, 'in_progress')}>
-                                   Start Appointment
-                               </Button>
-                           )}
-                           {booking.status === 'in_progress' && (
-                               <Button size="sm" variant="default" className="bg-green-600 hover:bg-green-700" onClick={() => handleStatusChange(booking.id, 'completed')}>
-                                   <CheckCircle className="h-4 w-4 mr-2" />
-                                   Mark Complete
-                               </Button>
-                           )}
-                           
-                           {/* Payment Action */}
-                           {booking.status === 'completed' && (
-                               <div className="flex items-center gap-2">
-                                   {(() => {
-                                       const totalPaid = booking.payments?.reduce((sum, p) => sum + Number(p.amount), 0) || 0;
-                                       // Assume first payment is deposit
-                                       const initialDeposit = booking.payments && booking.payments.length > 0 
-                                            ? Number([...booking.payments].sort((a, b) => a.id.localeCompare(b.id))[0].amount) 
-                                            : 0;
-                                       const targetTotal = Number(booking.price || 0) + initialDeposit;
-                                       
-                                       return totalPaid >= targetTotal - 0.01 ? ( // tolerance for float
-                                           <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Paid in Full</Badge>
-                                       ) : (
-                                           <RecordPaymentDialog 
-                                                booking={booking} 
-                                                onRecordPayment={(amount, method, stripePaymentId) => handleRecordPayment(booking.id, amount, method, stripePaymentId)} 
-                                           />
-                                       );
-                                   })()}
-                               </div>
-                           )}
-                           
-                           {booking.status !== 'cancelled' && booking.status !== 'completed' && (
-                               <>
-                                 <RescheduleDialog 
-                                     booking={booking} 
-                                     onReschedule={(date, time) => handleReschedule(booking.id, date, time)} 
-                                 />
-                                 <AlertDialog>
-                                   <AlertDialogTrigger asChild>
-                                     <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-600 hover:bg-red-50">
-                                         Cancel
-                                     </Button>
-                                   </AlertDialogTrigger>
-                                   <AlertDialogContent className="max-h-[90vh] w-[95vw] sm:max-w-lg flex flex-col">
-                                     <div className="flex-1 overflow-y-auto px-1">
-                                       <AlertDialogHeader>
-                                         <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                         <AlertDialogDescription>
-                                           This action will cancel the booking. This cannot be easily undone.
-                                         </AlertDialogDescription>
-                                       </AlertDialogHeader>
-                                     </div>
-                                     <AlertDialogFooter>
-                                       <AlertDialogCancel>Dismiss</AlertDialogCancel>
-                                       <AlertDialogAction onClick={() => handleStatusChange(booking.id, 'cancelled')} className="bg-red-600 hover:bg-red-700">
-                                         Yes, Cancel Booking
-                                       </AlertDialogAction>
-                                     </AlertDialogFooter>
-                                   </AlertDialogContent>
-                                 </AlertDialog>
-                               </>
-                           )}
+                        <div className="space-y-4 flex flex-col justify-between">
+                           {/* Stylist Assignment */}
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                              Assigned Stylist
+                            </label>
+                            {isAdmin ? (
+                              <Select
+                                value={booking.stylistId || "unassigned"}
+                                onValueChange={(value) => handleAssignStylist(booking.id, value)}
+                              >
+                                <SelectTrigger className="w-full bg-background/50 border-input/60 hover:border-primary/50 transition-colors">
+                                  <SelectValue placeholder="Select Stylist" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="unassigned">Unassigned</SelectItem>
+                                  {stylists.map((stylist: any) => (
+                                    <SelectItem key={stylist.id} value={stylist.id}>
+                                      {stylist.fullName || stylist.user?.fullName}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <div className="p-2 border rounded-md bg-muted/50 text-sm font-medium flex items-center gap-2">
+                                <User className="w-4 h-4 opacity-50" />
+                                {booking.stylist ? (booking.stylist.user?.fullName || "Assigned") : "Unassigned"}
+                              </div>
+                            )}
+                          </div>
 
-                           {booking.status === 'cancelled' && (
-                               <Button size="sm" variant="outline" onClick={() => handleStatusChange(booking.id, 'booked')}>
-                                   Restore to Booked
-                               </Button>
-                           )}
+                          {/* Actions */}
+                          <div className="flex flex-wrap gap-2 justify-end items-end">
+                             {/* Status Actions */}
+                             {booking.status === 'booked' && (
+                                 <Button size="sm" variant="outline" onClick={() => handleStatusChange(booking.id, 'in_progress')} className="border-blue-200 text-blue-700 hover:bg-blue-50">
+                                     Start Appointment
+                                 </Button>
+                             )}
+                             {booking.status === 'in_progress' && (
+                                 <Button size="sm" variant="default" className="bg-green-600 hover:bg-green-700 shadow-md" onClick={() => handleStatusChange(booking.id, 'completed')}>
+                                     <CheckCircle className="h-4 w-4 mr-2" />
+                                     Mark Complete
+                                 </Button>
+                             )}
+                             
+                             {/* Payment Action */}
+                             {booking.status === 'completed' && (
+                                 <div className="flex items-center gap-2">
+                                     {(() => {
+                                         const totalPaid = booking.payments?.reduce((sum, p) => sum + Number(p.amount), 0) || 0;
+                                         // Assume first payment is deposit
+                                         const initialDeposit = booking.payments && booking.payments.length > 0 
+                                              ? Number([...booking.payments].sort((a, b) => a.id.localeCompare(b.id))[0].amount) 
+                                              : 0;
+                                         const targetTotal = Number(booking.price || 0) + initialDeposit;
+                                         
+                                         return totalPaid >= targetTotal - 0.01 ? ( // tolerance for float
+                                             <Badge className="bg-green-100 text-green-800 hover:bg-green-200 border-green-200 px-3 py-1">
+                                                <CheckCircle className="w-3 h-3 mr-1" />
+                                                Paid in Full
+                                             </Badge>
+                                         ) : (
+                                             <RecordPaymentDialog 
+                                                  booking={booking} 
+                                                  onRecordPayment={(amount, method, stripePaymentId) => handleRecordPayment(booking.id, amount, method, stripePaymentId)} 
+                                             />
+                                         );
+                                     })()}
+                                 </div>
+                             )}
+                             
+                             {booking.status !== 'cancelled' && booking.status !== 'completed' && (
+                                 <>
+                                   <RescheduleDialog 
+                                       booking={booking} 
+                                       onReschedule={(date, time) => handleReschedule(booking.id, date, time)} 
+                                   />
+                                   <AlertDialog>
+                                     <AlertDialogTrigger asChild>
+                                       <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-600 hover:bg-red-50">
+                                           <X className="h-4 w-4 mr-1" />
+                                           Cancel
+                                       </Button>
+                                     </AlertDialogTrigger>
+                                     <AlertDialogContent className="max-h-[90vh] w-[95vw] sm:max-w-lg flex flex-col">
+                                       <div className="flex-1 overflow-y-auto px-1">
+                                         <AlertDialogHeader>
+                                           <AlertDialogTitle className="font-serif text-2xl">Cancel Appointment?</AlertDialogTitle>
+                                           <AlertDialogDescription>
+                                             This action will cancel the booking for <span className="font-semibold text-foreground">{booking.customer?.fullName}</span>. This cannot be easily undone.
+                                           </AlertDialogDescription>
+                                         </AlertDialogHeader>
+                                       </div>
+                                       <AlertDialogFooter>
+                                         <AlertDialogCancel>Dismiss</AlertDialogCancel>
+                                         <AlertDialogAction onClick={() => handleStatusChange(booking.id, 'cancelled')} className="bg-red-600 hover:bg-red-700">
+                                           Yes, Cancel Booking
+                                         </AlertDialogAction>
+                                       </AlertDialogFooter>
+                                     </AlertDialogContent>
+                                   </AlertDialog>
+                                 </>
+                             )}
+
+                             {booking.status === 'cancelled' && (
+                                 <Button size="sm" variant="outline" onClick={() => handleStatusChange(booking.id, 'booked')}>
+                                     Restore to Booked
+                                 </Button>
+                             )}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </Card>
+                  </Card>
+                </motion.div>
               ))}
             </div>
           )}
+          </AnimatePresence>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

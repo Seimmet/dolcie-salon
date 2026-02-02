@@ -7,7 +7,10 @@ import {
   MoveUp, 
   MoveDown,
   Loader2,
-  Save
+  HelpCircle,
+  Settings,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,6 +45,7 @@ import {
 import { toast } from "sonner";
 import { faqService, Faq } from '@/services/faqService';
 import { settingsService } from '@/services/settingsService';
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Faqs() {
   const queryClient = useQueryClient();
@@ -170,91 +174,131 @@ export default function Faqs() {
   };
 
   return (
-    <div className="space-y-6">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="space-y-6"
+    >
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">FAQ Management</h1>
+          <h1 className="text-3xl font-bold tracking-tight font-serif">FAQ Management</h1>
           <p className="text-muted-foreground">Manage frequently asked questions and answers.</p>
         </div>
-        <Button onClick={() => { resetForm(); setIsCreateOpen(true); }}>
+        <Button onClick={() => { resetForm(); setIsCreateOpen(true); }} className="shadow-sm">
           <Plus className="mr-2 h-4 w-4" /> Add FAQ
         </Button>
       </div>
 
-      <Card>
+      <Card className="border-border shadow-card hover:shadow-lg transition-all duration-300">
         <CardHeader>
-          <CardTitle>Global Settings</CardTitle>
-          <CardDescription>Control the visibility of the FAQ section on the home page.</CardDescription>
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-primary/10 rounded-full">
+              <Settings className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <CardTitle className="font-serif">Global Settings</CardTitle>
+              <CardDescription>Control the visibility of the FAQ section on the home page.</CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-4 p-4 bg-muted/20 rounded-lg border border-border">
             <Switch 
               id="show-faq" 
               checked={showFaqSection}
               onCheckedChange={handleToggleSection}
               disabled={isSettingsLoading || settingsMutation.isPending}
             />
-            <Label htmlFor="show-faq">Show FAQ Section on Home Page</Label>
-            {settingsMutation.isPending && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
+            <div className="flex-1">
+              <Label htmlFor="show-faq" className="font-medium">Show FAQ Section</Label>
+              <p className="text-sm text-muted-foreground">
+                When enabled, the FAQ section will be visible to all visitors on the landing page.
+              </p>
+            </div>
+            {settingsMutation.isPending && <Loader2 className="h-4 w-4 animate-spin ml-2 text-primary" />}
           </div>
         </CardContent>
       </Card>
 
       <div className="space-y-4">
         {isLoading ? (
-          <div className="flex justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <div className="flex justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary/50" />
           </div>
         ) : faqs.length === 0 ? (
-          <div className="text-center py-12 border rounded-lg bg-muted/10">
-            <p className="text-muted-foreground">No FAQs found. Create one to get started.</p>
+          <div className="text-center py-12 border border-dashed border-border rounded-lg bg-muted/10">
+            <HelpCircle className="h-10 w-10 mx-auto mb-3 text-muted-foreground/50" />
+            <p className="text-muted-foreground font-medium">No FAQs found.</p>
+            <p className="text-sm text-muted-foreground">Create your first question to get started.</p>
           </div>
         ) : (
-          faqs.map((faq, index) => (
-            <Card key={faq.id} className="overflow-hidden">
-              <div className="p-4 flex items-start gap-4">
-                <div className="flex flex-col gap-1 mt-1">
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-6 w-6" 
-                    disabled={index === 0}
-                    onClick={() => handleMove(index, 'up')}
-                  >
-                    <MoveUp className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-6 w-6"
-                    disabled={index === faqs.length - 1}
-                    onClick={() => handleMove(index, 'down')}
-                  >
-                    <MoveDown className="h-4 w-4" />
-                  </Button>
-                </div>
-                
-                <div className="flex-1 space-y-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-semibold">{faq.question}</h3>
-                    {!faq.isActive && (
-                      <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">Hidden</span>
-                    )}
-                  </div>
-                  <p className="text-sm text-muted-foreground whitespace-pre-line">{faq.answer}</p>
-                </div>
+          <AnimatePresence mode='popLayout'>
+            {faqs.map((faq, index) => (
+              <motion.div
+                key={faq.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.2, delay: index * 0.05 }}
+              >
+                <Card className="overflow-hidden border-border shadow-sm hover:shadow-md transition-all duration-200 group">
+                  <div className="p-4 flex items-start gap-4">
+                    <div className="flex flex-col gap-1 mt-1 opacity-50 group-hover:opacity-100 transition-opacity">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-6 w-6 hover:bg-primary/10 hover:text-primary" 
+                        disabled={index === 0}
+                        onClick={() => handleMove(index, 'up')}
+                      >
+                        <MoveUp className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-6 w-6 hover:bg-primary/10 hover:text-primary"
+                        disabled={index === faqs.length - 1}
+                        onClick={() => handleMove(index, 'down')}
+                      >
+                        <MoveDown className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                    
+                    <div className="flex-1 space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1.5 bg-primary/10 rounded-md text-primary">
+                          <HelpCircle className="h-3.5 w-3.5" />
+                        </div>
+                        <h3 className="font-semibold font-serif text-lg">{faq.question}</h3>
+                        {!faq.isActive ? (
+                          <span className="flex items-center gap-1 text-[10px] font-medium bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full border border-yellow-200">
+                            <EyeOff className="h-3 w-3" /> Hidden
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1 text-[10px] font-medium bg-green-100 text-green-800 px-2 py-0.5 rounded-full border border-green-200 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Eye className="h-3 w-3" /> Active
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground whitespace-pre-line pl-8 border-l-2 border-border/50 ml-2.5">
+                        {faq.answer}
+                      </p>
+                    </div>
 
-                <div className="flex gap-2">
-                  <Button variant="outline" size="icon" onClick={() => handleEdit(faq)}>
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button variant="destructive" size="icon" onClick={() => setDeletingId(faq.id)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          ))
+                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button variant="outline" size="icon" onClick={() => handleEdit(faq)} className="h-8 w-8 border-border hover:border-primary/50 hover:text-primary">
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button variant="outline" size="icon" onClick={() => setDeletingId(faq.id)} className="h-8 w-8 border-border hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              </motion.div>
+            ))}
+          </AnimatePresence>
         )}
       </div>
 
@@ -265,15 +309,14 @@ export default function Faqs() {
           setEditingFaq(null);
         }
       }}>
-        <DialogContent className="sm:max-w-[425px] max-h-[90vh] flex flex-col w-[95vw]">
+        <DialogContent className="sm:max-w-[500px] border-border shadow-xl">
           <DialogHeader>
-            <DialogTitle>{editingFaq ? 'Edit FAQ' : 'Create New FAQ'}</DialogTitle>
+            <DialogTitle className="font-serif text-xl">{editingFaq ? 'Edit FAQ' : 'Create New FAQ'}</DialogTitle>
             <DialogDescription>
               Add a question and answer for your customers.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex-1 overflow-y-auto px-1">
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4 pt-4">
             <div className="space-y-2">
               <Label htmlFor="question">Question</Label>
               <Input 
@@ -282,6 +325,7 @@ export default function Faqs() {
                 onChange={(e) => setQuestion(e.target.value)} 
                 placeholder="e.g., What are your opening hours?"
                 required
+                className="font-medium"
               />
             </div>
             <div className="space-y-2">
@@ -291,19 +335,22 @@ export default function Faqs() {
                 value={answer} 
                 onChange={(e) => setAnswer(e.target.value)} 
                 placeholder="Enter the answer here..."
-                className="min-h-[100px]"
+                className="min-h-[120px] resize-none"
                 required
               />
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border">
+              <div className="space-y-0.5">
+                <Label htmlFor="active" className="text-base">Active Status</Label>
+                <p className="text-xs text-muted-foreground">Visible to customers on the website</p>
+              </div>
               <Switch 
                 id="active" 
                 checked={isActive} 
                 onCheckedChange={setIsActive} 
               />
-              <Label htmlFor="active">Active (Visible to customers)</Label>
             </div>
-            <DialogFooter>
+            <DialogFooter className="gap-2 sm:gap-0">
               <Button type="button" variant="outline" onClick={() => {
                 setIsCreateOpen(false);
                 setEditingFaq(null);
@@ -316,21 +363,18 @@ export default function Faqs() {
               </Button>
             </DialogFooter>
           </form>
-          </div>
         </DialogContent>
       </Dialog>
 
       {/* Delete Confirmation */}
       <AlertDialog open={!!deletingId} onOpenChange={(open) => !open && setDeletingId(null)}>
-        <AlertDialogContent className="max-h-[90vh] w-[95vw] sm:max-w-lg flex flex-col">
-          <div className="flex-1 overflow-y-auto px-1">
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete this FAQ.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-          </div>
+        <AlertDialogContent className="border-border shadow-xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-serif">Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete this FAQ.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction 
@@ -342,6 +386,6 @@ export default function Faqs() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </motion.div>
   );
 }

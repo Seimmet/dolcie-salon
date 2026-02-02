@@ -1,32 +1,27 @@
-import Navbar from '@/components/Navbar';
-import Hero from '@/components/Hero';
-import Services from '@/components/Services';
-import Gallery from '@/components/Gallery';
-import About from '@/components/About';
-import Testimonials from '@/components/Testimonials';
-import Contact from '@/components/Contact';
-import Footer from '@/components/Footer';
-import FaqSection from '@/components/FaqSection';
-import PromoSection from '@/components/PromoSection';
-import { ChatWidget } from '@/components/chat/ChatWidget';
-import { SALON_INFO } from '@/config';
+import Navbar from "@/components/Navbar";
+import HeroSection from "@/components/landing/HeroSection";
+import AboutSection from "@/components/landing/AboutSection";
+import ServicesSection from "@/components/landing/ServicesSection";
+import GallerySection from "@/components/landing/GallerySection";
+import WhyChooseUs from "@/components/landing/WhyChooseUs";
+import TestimonialsSection from "@/components/landing/TestimonialsSection";
+import CTASection from "@/components/landing/CTASection";
+import Footer from "@/components/Footer";
+import { ChatWidget } from "@/components/chat/ChatWidget";
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-background">
-      {import.meta.env.VITE_CHATBOT_ENABLED !== 'false' && (
-        <ChatWidget salonName={SALON_INFO.name} />
-      )}
       <Navbar />
-      <Hero />
-      <PromoSection />
-      <Services />
-      <Gallery />
-      <About />
-      <Testimonials />
-      <FaqSection />
-      <Contact />
+      <HeroSection />
+      <AboutSection />
+      <ServicesSection />
+      <GallerySection />
+      <WhyChooseUs />
+      <TestimonialsSection />
+      <CTASection />
       <Footer />
+      <ChatWidget />
     </div>
   );
 };

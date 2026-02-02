@@ -72,15 +72,19 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 });
 
 // Start Server
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 
-  // Schedule Reminder Job (Every hour at minute 0)
-  cron.schedule('0 * * * *', () => {
-    console.log('Running scheduled reminder check...');
-    reminderService.checkAndSendReminders();
+    // Schedule Reminder Job (Every hour at minute 0)
+    cron.schedule('0 * * * *', () => {
+      console.log('Running scheduled reminder check...');
+      reminderService.checkAndSendReminders();
+    });
+    
+    // Initial check on startup (Optional, for testing)
+    // reminderService.checkAndSendReminders();
   });
-  
-  // Initial check on startup (Optional, for testing)
-  // reminderService.checkAndSendReminders();
-});
+}
+
+export default app;

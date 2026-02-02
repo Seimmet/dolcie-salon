@@ -1,15 +1,16 @@
-
 import { useState, useEffect } from 'react';
 import { bookingService, Booking } from '@/services/bookingService';
 import { settingsService, SalonSettings } from '@/services/settingsService';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, User } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, User, Phone, Mail } from 'lucide-react';
 import { format, startOfWeek, addDays, addWeeks, subWeeks, isSameDay, parseISO, startOfDay, isValid, setHours } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { motion } from "framer-motion";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function StylistSchedule() {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -61,42 +62,13 @@ export default function StylistSchedule() {
         const s = parseInt(day.start.split(':')[0]);
         const e = parseInt(day.end.split(':')[0]);
         if (!isNaN(s) && s < minH) minH = s;
-        // If end time is like 17:00, the last slot starts at 16:00 if 1 hour slots? 
-        // Or if end is 17:00, we show up to 16:00?
-        // Usually if end is 17:00, the shop closes at 17:00. The last 1-hour service is 16:00-17:00.
-        // So endHour for the grid (start times) should be end - 1.
-        // But the previous code was 10-16 (16:00 start).
-        // Let's assume 'end' in settings is closing time.
-        // If settings say 10:00 - 17:00.
-        // Slots: 10, 11, 12, 13, 14, 15, 16.
-        // So maxH should be e - 1?
-        // Let's check previous implementation: 10 + i (length 7) => 10, 11, 12, 13, 14, 15, 16.
-        // If closing is 17:00, then 16:00 is the last slot.
-        // If 'end' is 16:00, then 15:00 is the last slot?
-        // Let's stick to showing the start time of the slot.
-        // If the shop closes at 'end', the last slot starts at 'end' - 1 (assuming 1 hour duration).
-        // Let's take 'end' and subtract 1 if we want strict slots, OR just show until 'end' if we want to be safe.
-        // However, the original code had 10 to 16.
-        // I will assume the 'end' time in settings is the time the shop closes.
-        // So if settings say 17:00, we should show up to 16:00.
         if (!isNaN(e) && e > maxH) maxH = e;
       }
     });
 
     if (hasOpenDays) {
       startHour = minH;
-      // If maxH is 17 (5 PM), we want slots up to 16 (4 PM) if 1 hour slots.
-      // But let's show up to maxH - 1 to be safe, assuming 1 hour slots.
-      // Or if the user meant 'hours' as in "hours of operation", usually it includes the last hour?
-      // Let's just use maxH as the limit for now, maybe maxH - 1 if we want to be precise about "start times".
-      // But let's just use maxH (e.g., 17) -> render 17:00? No, if close at 17:00, 17:00 is not a slot.
-      // Let's use maxH - 1.
-      // Wait, if maxH is 16 (4 PM) in settings, and we used to show 16 (4 PM), then maybe the settings meant "last appointment"?
-      // Standard is "Business Hours" = Open - Close.
-      // I'll stick with showing start times up to (Close Time - 1).
       endHour = maxH > startHour ? maxH - 1 : startHour;
-      
-      // Edge case: if endHour < startHour (e.g. 10 - 10), show at least one.
       if (endHour < startHour) endHour = startHour;
     }
   }
@@ -121,8 +93,6 @@ export default function StylistSchedule() {
       const isDateMatch = isSameDay(bookingDate, date);
       
       // Check time match (hour)
-      // Note: bookingTime is full ISO, we need to extract hour
-      // If bookingTime is 10:00, getHours() should be 10
       const isTimeMatch = bookingTime.getHours() === hour;
 
       return isDateMatch && isTimeMatch && b.status !== 'cancelled';
@@ -132,62 +102,94 @@ export default function StylistSchedule() {
   const getStatusColor = (status?: string) => {
     if (!status) return 'bg-gray-100 text-gray-800 border-gray-200';
     switch (status.toLowerCase()) {
-      case 'booked': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'checked_in': return 'bg-teal-100 text-teal-800 border-teal-200';
-      case 'confirmed': return 'bg-green-100 text-green-800 border-green-200';
-      case 'completed': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'in progress': return 'bg-purple-100 text-purple-800 border-purple-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'booked': return 'bg-yellow-500/10 text-yellow-700 border-yellow-200/50';
+      case 'checked_in': return 'bg-teal-500/10 text-teal-700 border-teal-200/50';
+      case 'confirmed': return 'bg-emerald-500/10 text-emerald-700 border-emerald-200/50';
+      case 'completed': return 'bg-blue-500/10 text-blue-700 border-blue-200/50';
+      case 'in progress': return 'bg-green-500/10 text-green-700 border-green-200/50';
+      case 'cancelled': return 'bg-red-500/10 text-red-700 border-red-200/50';
+      default: return 'bg-gray-500/10 text-gray-700 border-gray-200/50';
     }
   };
 
   if (loading) {
-    return <Skeleton className="h-[600px] w-full" />;
+    return (
+      <div className="space-y-6 p-6">
+        <div className="flex justify-between items-center mb-6">
+           <Skeleton className="h-10 w-48" />
+           <Skeleton className="h-10 w-64" />
+        </div>
+        <Skeleton className="h-[600px] w-full rounded-xl" />
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="p-4 text-red-500 bg-red-50 rounded-lg">Error: {error}</div>;
+    return (
+      <div className="p-6">
+        <div className="p-4 text-red-500 bg-red-50 rounded-xl border border-red-100">
+          Error: {error}
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-6">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="space-y-6 h-full flex flex-col"
+    >
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h2 className="text-2xl font-bold tracking-tight">My Schedule</h2>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={prevWeek}>
+        <div>
+           {/* Title handled by layout, but we can keep subtitle or remove if redundant */}
+        </div>
+        
+        <div className="flex items-center gap-2 bg-card p-1.5 rounded-xl shadow-sm border border-border">
+          <Button variant="ghost" size="icon" onClick={prevWeek} className="h-8 w-8 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors">
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <div className="flex items-center gap-2 min-w-[140px] justify-center font-medium">
-            <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+          <div className="flex items-center gap-2 min-w-[160px] justify-center font-medium font-serif text-sm px-2">
+            <CalendarIcon className="h-4 w-4 text-primary" />
             {format(weekStart, 'MMM d')} - {format(addDays(weekStart, 6), 'MMM d, yyyy')}
           </div>
-          <Button variant="outline" size="icon" onClick={nextWeek}>
+          <Button variant="ghost" size="icon" onClick={nextWeek} className="h-8 w-8 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors">
             <ChevronRight className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="sm" onClick={goToToday}>
+          <div className="h-4 w-px bg-border mx-1" />
+          <Button variant="ghost" size="sm" onClick={goToToday} className="text-xs font-medium hover:bg-primary/10 hover:text-primary rounded-lg h-8 px-3 transition-colors">
             Today
           </Button>
         </div>
       </div>
 
-      <Card>
-        <CardContent className="p-0 overflow-x-auto">
-          <div className="min-w-[800px]">
+      <Card className="border-border shadow-card hover:shadow-lg transition-all duration-300 overflow-hidden flex-1 flex flex-col bg-card/50 backdrop-blur-sm">
+        <CardContent className="p-0 overflow-x-auto flex-1">
+          <div className="min-w-[1000px]">
             {/* Header Row */}
-            <div className="grid grid-cols-8 border-b bg-muted/30">
-              <div className="p-2 border-r font-medium text-sm text-muted-foreground text-center flex items-center justify-center">Time</div>
+            <div className="grid grid-cols-8 border-b border-border bg-muted/40 sticky top-0 z-10 backdrop-blur-md">
+              <div className="p-4 border-r border-border font-medium text-sm text-muted-foreground text-center flex items-center justify-center bg-muted/20">
+                <Clock className="w-4 h-4 mr-2 opacity-50" />
+                Time
+              </div>
               {weekDays.map((day) => (
                 <div 
                   key={day.toISOString()} 
                   className={cn(
-                    "p-2 border-r last:border-r-0 text-center",
+                    "p-3 border-r border-border last:border-r-0 text-center transition-colors relative overflow-hidden",
                     isSameDay(day, new Date()) ? "bg-primary/5" : ""
                   )}
                 >
-                  <div className="font-medium text-sm">{format(day, 'EEEE')}</div>
+                  {isSameDay(day, new Date()) && (
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-gold" />
+                  )}
+                  <div className="font-medium text-sm font-serif mb-1">{format(day, 'EEEE')}</div>
                   <div className={cn(
-                    "text-xs mt-1 inline-block px-2 py-0.5 rounded-full",
-                    isSameDay(day, new Date()) ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+                    "text-xs inline-flex items-center justify-center px-3 py-1 rounded-full font-medium transition-all",
+                    isSameDay(day, new Date()) 
+                      ? "bg-gradient-gold text-white shadow-md scale-105" 
+                      : "bg-muted text-muted-foreground"
                   )}>
                     {format(day, 'MMM d')}
                   </div>
@@ -197,9 +199,9 @@ export default function StylistSchedule() {
 
             {/* Time Slots */}
             {hours.map((hour) => (
-              <div key={hour} className="grid grid-cols-8 border-b last:border-b-0">
+              <div key={hour} className="grid grid-cols-8 border-b border-border last:border-b-0 group">
                 {/* Time Label */}
-                <div className="p-2 border-r text-sm text-muted-foreground text-center flex items-center justify-center">
+                <div className="p-3 border-r border-border text-sm text-muted-foreground text-center flex items-center justify-center font-medium bg-muted/10 group-hover:bg-muted/20 transition-colors">
                   {format(setHours(new Date(), hour), 'h:00 a')}
                 </div>
 
@@ -207,69 +209,124 @@ export default function StylistSchedule() {
                 {weekDays.map((day) => {
                   const booking = getBookingForSlot(day, hour);
                   const isPast = day < startOfDay(new Date()) || (isSameDay(day, new Date()) && hour < new Date().getHours());
+                  const isToday = isSameDay(day, new Date());
 
                   return (
                     <div 
                       key={`${day.toISOString()}-${hour}`} 
                       className={cn(
-                        "border-r last:border-r-0 min-h-[80px] p-1 relative group transition-colors",
-                        isSameDay(day, new Date()) ? "bg-primary/[0.02]" : "",
-                        !booking && isPast ? "bg-muted/10" : ""
+                        "border-r border-border last:border-r-0 min-h-[120px] p-1.5 relative transition-all duration-200",
+                        isToday ? "bg-primary/[0.02]" : "",
+                        !booking && isPast ? "bg-muted/10 bg-[linear-gradient(45deg,transparent_25%,rgba(0,0,0,0.05)_25%,rgba(0,0,0,0.05)_50%,transparent_50%,transparent_75%,rgba(0,0,0,0.05)_75%,rgba(0,0,0,0.05)_100%)] bg-[length:10px_10px]" : "hover:bg-muted/5"
                       )}
                     >
                       {booking ? (
                         <Popover>
                           <PopoverTrigger asChild>
-                            <div className={cn(
-                              "h-full w-full rounded-md p-2 text-xs cursor-pointer border shadow-sm hover:shadow-md transition-all",
-                              getStatusColor(booking.status)
-                            )}>
-                              <div className="font-semibold truncate">{booking.customer?.fullName || 'Guest'}</div>
-                              {booking.category && <div className="truncate font-medium text-[10px] uppercase opacity-80">{booking.category.name}</div>}
-                              <div className="truncate opacity-90">{booking.service?.name}</div>
-                              <div className="mt-1 flex items-center gap-1 opacity-75">
-                                <Clock className="w-3 h-3" />
-                                <span>{format(parseISO(booking.bookingTime), 'h:mm a')}</span>
+                            <motion.button 
+                              initial={{ opacity: 0, scale: 0.95 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              whileHover={{ scale: 1.02, y: -2 }}
+                              className={cn(
+                                "w-full h-full rounded-lg border p-2 text-left text-xs flex flex-col gap-1.5 shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden",
+                                getStatusColor(booking.status)
+                              )}
+                            >
+                              <div className="font-semibold truncate font-serif text-sm">
+                                {booking.guest?.fullName || 'Walk-in Guest'}
                               </div>
-                            </div>
+                              <div className="truncate opacity-90 font-medium">
+                                {booking.style?.name || booking.category?.name || 'Service'}
+                              </div>
+                              <div className="mt-auto flex justify-between items-center pt-1 border-t border-current/10">
+                                <Badge variant="outline" className="text-[10px] h-4 px-1 bg-white/50 border-current/20 backdrop-blur-sm">
+                                  {format(parseISO(booking.bookingTime), 'h:mm a')}
+                                </Badge>
+                                {booking.status === 'checked_in' && (
+                                  <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse" title="Client Checked In" />
+                                )}
+                              </div>
+                            </motion.button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-80">
-                            <div className="grid gap-4">
-                              <div className="space-y-2">
-                                {booking.category && <div className="text-xs font-semibold text-primary uppercase">{booking.category.name}</div>}
-                                <h4 className="font-medium leading-none">{booking.service?.name}</h4>
-                                <p className="text-sm text-muted-foreground">
-                                  {format(parseISO(booking.bookingDate), 'MMMM do, yyyy')} at {format(parseISO(booking.bookingTime), 'h:mm a')}
-                                </p>
-                              </div>
-                              <div className="grid gap-2">
-                                <div className="flex items-center gap-2 text-sm">
-                                  <User className="w-4 h-4 text-muted-foreground" />
-                                  <span className="font-medium">{booking.customer?.fullName}</span>
-                                </div>
-                                <div className="text-sm pl-6 text-muted-foreground">
-                                  {booking.customer?.phone}
-                                </div>
-                                <div className="text-sm pl-6 text-muted-foreground">
-                                  {booking.customer?.email}
-                                </div>
-                                <div className="flex items-center gap-2 mt-2">
-                                  <Badge variant="outline" className={cn("capitalize", getStatusColor(booking.status))}>
-                                    {booking.status}
-                                  </Badge>
-                                  <span className="text-sm text-muted-foreground ml-auto">
-                                    ${booking.service?.price}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
+                          <PopoverContent className="w-80 p-0 border-border shadow-xl" align="center" side="right">
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ duration: 0.2 }}
+                            >
+                                <Card className="border-none shadow-none">
+                                  <CardContent className="p-5 space-y-4">
+                                    <div className="flex items-center gap-3 pb-4 border-b border-border">
+                                      <Avatar className="h-10 w-10 border-2 border-primary/10">
+                                        <AvatarImage src="" />
+                                        <AvatarFallback className="bg-primary/5 text-primary">
+                                            {booking.guest?.fullName?.charAt(0) || 'G'}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <div>
+                                        <h4 className="font-semibold font-serif text-lg">{booking.guest?.fullName}</h4>
+                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                          <Badge variant="secondary" className={cn("text-[10px]", getStatusColor(booking.status))}>
+                                            {booking.status}
+                                          </Badge>
+                                          <span>•</span>
+                                          <span>{format(parseISO(booking.bookingDate), 'MMM d, yyyy')}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="space-y-3">
+                                      <div className="flex items-start gap-3 text-sm">
+                                        <div className="p-2 bg-primary/5 rounded-full text-primary mt-0.5">
+                                            <User className="w-4 h-4" />
+                                        </div>
+                                        <div>
+                                          <p className="text-muted-foreground text-xs font-medium">Service</p>
+                                          <p className="font-medium">{booking.style?.name || booking.category?.name}</p>
+                                          <p className="text-xs text-muted-foreground mt-0.5">${booking.price}</p>
+                                        </div>
+                                      </div>
+
+                                      <div className="flex items-start gap-3 text-sm">
+                                        <div className="p-2 bg-primary/5 rounded-full text-primary mt-0.5">
+                                            <Clock className="w-4 h-4" />
+                                        </div>
+                                        <div>
+                                          <p className="text-muted-foreground text-xs font-medium">Time</p>
+                                          <p className="font-medium">
+                                            {format(parseISO(booking.bookingTime), 'h:mm a')} - {format(addDays(parseISO(booking.bookingTime), 0), 'h:mm a')}
+                                          </p>
+                                        </div>
+                                      </div>
+
+                                      {(booking.guest?.email || booking.guest?.phone) && (
+                                        <div className="pt-2 border-t border-border mt-2 grid grid-cols-2 gap-2">
+                                            {booking.guest?.phone && (
+                                                <Button variant="outline" size="sm" className="w-full text-xs h-8 gap-2 border-border" asChild>
+                                                    <a href={`tel:${booking.guest.phone}`}>
+                                                        <Phone className="w-3 h-3" />
+                                                        Call
+                                                    </a>
+                                                </Button>
+                                            )}
+                                            {booking.guest?.email && (
+                                                <Button variant="outline" size="sm" className="w-full text-xs h-8 gap-2 border-border" asChild>
+                                                    <a href={`mailto:${booking.guest.email}`}>
+                                                        <Mail className="w-3 h-3" />
+                                                        Email
+                                                    </a>
+                                                </Button>
+                                            )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                            </motion.div>
                           </PopoverContent>
                         </Popover>
                       ) : (
-                         <div className="h-full w-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            {/* Placeholder for future "Add Block/Time Off" feature */}
-                            {/* <span className="text-xs text-muted-foreground">+</span> */}
-                         </div>
+                        <div className="w-full h-full rounded-lg" />
                       )}
                     </div>
                   );
@@ -279,6 +336,6 @@ export default function StylistSchedule() {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </motion.div>
   );
 }

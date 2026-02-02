@@ -1,12 +1,13 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { format, addDays, startOfDay, isSameDay } from 'date-fns';
-import { Check, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, User, CreditCard, Loader2 } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, User, CreditCard, Loader2, Scissors, Sparkles, MapPin, Phone, Mail, AlertCircle } from 'lucide-react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 import { styleService, Style } from '@/services/styleService';
 import { bookingService, TimeSlot, GuestDetails } from '@/services/bookingService';
@@ -479,34 +481,47 @@ export default function Booking() {
     ];
 
     return (
-        <div className="w-full bg-card border-b border-border mb-8 sticky top-0 z-10">
+        <div className="w-full bg-card/80 backdrop-blur-md border-b border-border mb-8 sticky top-0 z-50 shadow-sm">
             <div className="container mx-auto px-4 py-4">
-                <div className="flex justify-between items-center max-w-4xl mx-auto">
+                <div className="flex justify-between items-center max-w-4xl mx-auto relative">
+                     {/* Background Line */}
+                    <div className="absolute top-[15px] left-0 w-full h-[2px] bg-muted -z-10" />
+                    
+                    {/* Animated Progress Line */}
+                    <motion.div 
+                        className="absolute top-[15px] left-0 h-[2px] bg-gradient-gold -z-0"
+                        initial={{ width: "0%" }}
+                        animate={{ width: `${((step - 1) / (steps.length - 1)) * 100}%` }}
+                        transition={{ duration: 0.5, ease: "easeInOut" }}
+                    />
+
                     {steps.map((s) => {
                         const isActive = step === s.num;
                         const isCompleted = step > s.num;
                         return (
                             <div key={s.num} className="flex flex-col items-center relative group">
-                                <div className={cn(
-                                    "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors duration-200 z-10 border-2",
-                                    isActive ? "bg-primary text-primary-foreground border-primary" : 
-                                    isCompleted ? "bg-primary text-primary-foreground border-primary" : 
-                                    "bg-background text-muted-foreground border-muted-foreground"
-                                )}>
+                                <motion.div 
+                                    className={cn(
+                                        "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-300 z-10 border-2",
+                                        isActive ? "bg-primary text-primary-foreground border-primary shadow-lg scale-110" : 
+                                        isCompleted ? "bg-primary text-primary-foreground border-primary" : 
+                                        "bg-background text-muted-foreground border-muted-foreground"
+                                    )}
+                                    animate={{ 
+                                        scale: isActive ? 1.2 : 1,
+                                        backgroundColor: isActive || isCompleted ? "var(--primary)" : "var(--background)",
+                                        borderColor: isActive || isCompleted ? "var(--primary)" : "var(--muted-foreground)"
+                                    }}
+                                >
                                     {isCompleted ? <Check className="w-4 h-4" /> : s.num}
-                                </div>
+                                </motion.div>
                                 <span className={cn(
-                                    "text-xs mt-2 font-medium transition-colors duration-200",
-                                    isActive || isCompleted ? "text-primary" : "text-muted-foreground"
+                                    "text-[10px] md:text-xs mt-2 font-medium transition-colors duration-200 absolute -bottom-6 w-max text-center",
+                                    isActive ? "text-primary font-bold" : 
+                                    isCompleted ? "text-primary" : "text-muted-foreground"
                                 )}>
                                     {s.label}
                                 </span>
-                                {s.num < steps.length && (
-                                    <div className={cn(
-                                        "absolute top-4 left-1/2 w-full h-[2px] -z-0",
-                                        isCompleted ? "bg-primary" : "bg-muted"
-                                    )} style={{ width: "calc(100% + 2rem)" }} />
-                                )}
                             </div>
                         );
                     })}
@@ -517,12 +532,21 @@ export default function Booking() {
   };
 
   const renderStep1 = () => (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <Card className="max-w-3xl mx-auto">
+    <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        transition={{ duration: 0.5 }}
+        className="space-y-6"
+    >
+        <Card className="max-w-3xl mx-auto border-none shadow-lg">
+            <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 pb-6">
+                <CardTitle className="text-2xl font-bold text-center font-serif">Appointment Guidelines & Booking Promise</CardTitle>
+                <CardDescription className="text-center">Please review our policies before booking</CardDescription>
+            </CardHeader>
             <CardContent className="p-6 md:p-8 space-y-6">
                 <div className="prose prose-sm max-w-none dark:prose-invert">
-                    <h2 className="text-2xl font-bold mb-4 text-center">Appointment Guidelines & Booking Promise</h2>
-                    <div className="whitespace-pre-wrap leading-relaxed text-muted-foreground">
+                    <div className="whitespace-pre-wrap leading-relaxed text-muted-foreground bg-muted/30 p-4 rounded-lg border border-muted">
                         {initialLoading ? (
                             <div className="flex items-center justify-center py-4">
                                 <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
@@ -534,43 +558,53 @@ export default function Booking() {
                     </div>
                 </div>
                 
-                <div className="flex items-center space-x-2 pt-4 border-t">
+                <div className="flex items-center space-x-3 pt-4 border-t bg-primary/5 p-4 rounded-lg">
                     <Checkbox 
                         id="policy-agreement" 
                         checked={policyAgreed} 
                         onCheckedChange={(checked) => setPolicyAgreed(checked as boolean)}
                         disabled={initialLoading}
+                        className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                     />
                     <label
                         htmlFor="policy-agreement"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer select-none"
                     >
                         I have read and agree to the booking policy and guidelines.
                     </label>
                 </div>
             </CardContent>
         </Card>
-    </div>
+    </motion.div>
   );
 
   const renderPromoStep = () => (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <Card className="max-w-4xl mx-auto">
+    <motion.div 
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: -20 }}
+        transition={{ duration: 0.5 }}
+        className="space-y-6"
+    >
+      <Card className="max-w-4xl mx-auto border-none shadow-lg">
+        <CardHeader className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 text-center">
+            <CardTitle className="text-2xl font-bold font-serif flex items-center justify-center gap-2">
+                <Sparkles className="w-5 h-5 text-purple-600" />
+                Monthly Promotions
+                <Sparkles className="w-5 h-5 text-purple-600" />
+            </CardTitle>
+            <CardDescription>Choose a promotion to apply, or continue without one.</CardDescription>
+        </CardHeader>
         <CardContent className="p-6 md:p-8 space-y-6">
-          <div className="text-center space-y-2">
-            <h2 className="text-2xl font-bold">Monthly Promotions</h2>
-            <p className="text-muted-foreground text-sm md:text-base">
-              Choose a promotion to apply, or continue without one.
-            </p>
-          </div>
           {promoLoading ? (
             <div className="flex items-center justify-center py-6">
               <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
               <span className="text-sm text-muted-foreground">Loading promotions...</span>
             </div>
           ) : promos.length === 0 ? (
-            <div className="text-center text-muted-foreground py-6">
-              There are no active promotions at this time.
+            <div className="text-center text-muted-foreground py-12 border-2 border-dashed rounded-lg bg-muted/20">
+              <Sparkles className="w-10 h-10 mx-auto text-muted-foreground mb-3 opacity-50" />
+              <p>There are no active promotions at this time.</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -578,8 +612,10 @@ export default function Booking() {
                 {promos.map((promo) => {
                   const isSelected = selectedPromoId === promo.id;
                   return (
-                    <button
+                    <motion.button
                       key={promo.id}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                       type="button"
                       onClick={() => {
                         if (isSelected) {
@@ -599,82 +635,65 @@ export default function Booking() {
                         }
                       }}
                       className={cn(
-                        "text-left rounded-lg border transition-all",
-                        "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
+                        "text-left rounded-xl border-2 transition-all duration-300 relative overflow-hidden group",
                         isSelected
-                          ? "border-primary bg-primary/5"
-                          : "border-gold/40 bg-card/90 hover:border-primary/60"
+                          ? "border-primary bg-primary/5 shadow-md"
+                          : "border-muted bg-card hover:border-primary/50 hover:shadow-sm"
                       )}
                     >
-                      <Card className="border-0 shadow-none bg-transparent">
-                        <CardContent className="p-4 space-y-3">
-                          <div className="flex items-start justify-between gap-3">
+                      {isSelected && (
+                          <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-bl-lg font-bold z-10">
+                              SELECTED
+                          </div>
+                      )}
+                      <div className="p-4 space-y-3 relative z-0">
+                        <div className="flex items-start justify-between gap-3">
                             <div>
-                              <p className="text-xs uppercase tracking-[0.2em] text-primary">
+                              <p className="text-xs uppercase tracking-[0.2em] text-primary font-bold">
                                 {promo.promoMonth} {promo.promoYear}
                               </p>
-                              <h3 className="text-lg font-semibold">
+                              <h3 className="text-lg font-serif font-bold mt-1">
                                 {promo.title || "Special Offer"}
                               </h3>
-                              <p className="text-sm text-muted-foreground mt-1">
+                              <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
+                                <Scissors className="w-3 h-3" />
                                 {promo.stylePricing?.style.name} •{" "}
                                 {promo.stylePricing?.category.name}
                               </p>
                             </div>
-                            <div className="text-right">
+                            <div className="text-right bg-background/80 p-2 rounded-lg shadow-sm border">
                               {typeof promo.discountPercentage === "number" ? (
                                 <>
-                                  <p className="text-xs text-muted-foreground">
-                                    Discount
-                                  </p>
-                                  <p className="text-xl font-bold">
-                                    {promo.discountPercentage}% off
-                                  </p>
-                                  <p className="text-[11px] text-muted-foreground mt-1">
-                                    Applies to any {promo.stylePricing?.style.name} variation
-                                  </p>
+                                  <p className="text-xs text-muted-foreground uppercase">Discount</p>
+                                  <p className="text-xl font-bold text-primary">{promo.discountPercentage}% OFF</p>
                                 </>
                               ) : (
                                 <>
-                                  <p className="text-xs text-muted-foreground">
-                                    Promo price
-                                  </p>
-                                  <p className="text-xl font-bold">
-                                    ${promo.promoPrice}
-                                  </p>
+                                  <p className="text-xs text-muted-foreground uppercase">Price</p>
+                                  <p className="text-xl font-bold text-primary">${promo.promoPrice}</p>
                                 </>
                               )}
                             </div>
                           </div>
                           {promo.description && (
-                            <p className="text-sm">{promo.description}</p>
+                            <p className="text-sm text-foreground/80 leading-relaxed bg-muted/30 p-2 rounded-md border-l-2 border-primary/20">
+                                {promo.description}
+                            </p>
                           )}
-                          <p className="text-xs text-muted-foreground flex justify-between items-center">
-                            <span>
-                              Offer ends{" "}
-                              {new Date(promo.offerEnds).toLocaleDateString(
-                                undefined,
-                                {
-                                  month: "long",
-                                  day: "numeric",
-                                  year: "numeric",
-                                }
-                              )}
+                          <p className="text-xs text-muted-foreground flex justify-between items-center pt-2 border-t border-dashed">
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              Ends {new Date(promo.offerEnds).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
                             </span>
-                            {isSelected && (
-                              <span className="text-primary font-medium">
-                                Selected
-                              </span>
-                            )}
                           </p>
-                        </CardContent>
-                      </Card>
-                    </button>
+                        </div>
+                    </motion.button>
                   );
                 })}
               </div>
-              <button
+              <Button
                 type="button"
+                variant="ghost"
                 onClick={() => {
                   setSelectedPromoId(null);
                   try {
@@ -684,165 +703,198 @@ export default function Booking() {
                   }
                 }}
                 className={cn(
-                  "w-full text-sm mt-2 px-4 py-3 rounded-md border",
-                  selectedPromoId
-                    ? "border-muted-foreground/40 text-muted-foreground hover:bg-muted/40"
-                    : "border-dashed border-muted-foreground/40 text-muted-foreground cursor-default"
+                  "w-full text-sm mt-2 border border-dashed",
+                  !selectedPromoId && "opacity-50 cursor-not-allowed"
                 )}
+                disabled={!selectedPromoId}
               >
-                {selectedPromoId
-                  ? "I don't want to use a promotion"
-                  : "No promotion selected"}
-              </button>
+                {selectedPromoId ? "Remove Selected Promotion" : "No promotion selected"}
+              </Button>
             </div>
           )}
         </CardContent>
       </Card>
-    </div>
+    </motion.div>
   );
 
   const renderStep2 = () => (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <motion.div 
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: -20 }}
+        transition={{ duration: 0.5 }}
+        className="space-y-6"
+    >
       {settings?.courtesyNotice && (
-        <Card className="border-l-4 border-l-gold bg-gold/5 shadow-sm">
-            <CardContent className="p-6">
-                <div className="whitespace-pre-wrap text-sm md:text-base text-foreground/90 font-medium leading-relaxed font-serif">
+        <Card className="border-l-4 border-l-yellow-500 bg-yellow-50/50 shadow-sm overflow-hidden">
+            <CardContent className="p-6 flex gap-4">
+                <AlertCircle className="w-6 h-6 text-yellow-600 shrink-0" />
+                <div className="whitespace-pre-wrap text-sm md:text-base text-yellow-800 font-medium leading-relaxed font-serif">
                     {settings.courtesyNotice}
                 </div>
             </CardContent>
         </Card>
       )}
       <div className="grid gap-6 md:grid-cols-2">
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label className="text-lg font-semibold">Select Style</Label>
-            <Select value={selectedStyleId} onValueChange={setSelectedStyleId}>
-              <SelectTrigger className="h-12 text-lg">
-                <SelectValue placeholder="Choose a style..." />
-              </SelectTrigger>
-              <SelectContent>
-                {styles.map((style) => (
-                  <SelectItem key={style.id} value={style.id}>
-                    <div className="flex items-center gap-3">
-                      {style.imageUrl ? (
-                        <img 
-                          src={style.imageUrl} 
-                          alt={style.name} 
-                          className="w-8 h-8 rounded-full object-cover" 
-                        />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs">
-                          {style.name.charAt(0)}
-                        </div>
-                      )}
-                      <span>{style.name}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="space-y-6">
+          <Card className="border-none shadow-md overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 pb-4">
+                <CardTitle className="font-serif">Select Service</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 space-y-4">
+                <div className="space-y-2">
+                    <Label className="text-base font-semibold">Style</Label>
+                    <Select value={selectedStyleId} onValueChange={setSelectedStyleId}>
+                    <SelectTrigger className="h-12 text-lg bg-background shadow-sm transition-all hover:border-primary">
+                        <SelectValue placeholder="Choose a style..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {styles.map((style) => (
+                        <SelectItem key={style.id} value={style.id} className="cursor-pointer">
+                            <div className="flex items-center gap-3">
+                            {style.imageUrl ? (
+                                <img 
+                                src={style.imageUrl} 
+                                alt={style.name} 
+                                className="w-8 h-8 rounded-full object-cover border border-border" 
+                                />
+                            ) : (
+                                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary border border-primary/20">
+                                {style.name.charAt(0)}
+                                </div>
+                            )}
+                            <span className="font-medium">{style.name}</span>
+                            </div>
+                        </SelectItem>
+                        ))}
+                    </SelectContent>
+                    </Select>
+                </div>
 
-          {selectedStyleId && (
-            <div className="space-y-2 animate-in fade-in zoom-in-95 duration-300">
-              <Label className="text-lg font-semibold">Select Variation</Label>
-              <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
-                <SelectTrigger className="h-12 text-lg">
-                  <SelectValue placeholder="Choose variation..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableVariations.map((v) => (
-                    <SelectItem key={v.id} value={v.id}>
-                      {v.name} - ${v.price} ({v.duration} mins)
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+                <AnimatePresence>
+                    {selectedStyleId && (
+                        <motion.div 
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="space-y-2"
+                        >
+                        <Label className="text-base font-semibold">Variation</Label>
+                        <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
+                            <SelectTrigger className="h-12 text-lg bg-background shadow-sm transition-all hover:border-primary">
+                            <SelectValue placeholder="Choose variation..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                            {availableVariations.map((v) => (
+                                <SelectItem key={v.id} value={v.id} className="cursor-pointer">
+                                <div className="flex justify-between w-full gap-4">
+                                    <span>{v.name}</span>
+                                    <span className="text-muted-foreground">${v.price} ({v.duration} min)</span>
+                                </div>
+                                </SelectItem>
+                            ))}
+                            </SelectContent>
+                        </Select>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
-          {selectedCategoryId && (
-            <div className="space-y-2 animate-in fade-in zoom-in-95 duration-300">
-              <Label className="text-lg font-semibold">Select Braider</Label>
-              <Select value={selectedStylistId} onValueChange={setSelectedStylistId}>
-                <SelectTrigger className="h-12 text-lg">
-                  <SelectValue placeholder="Any Available Braider" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="unassigned">Any Available Braider</SelectItem>
-                  {stylists
-                    .filter(stylist => 
-                      !selectedStyleId || 
-                      (stylist.styles && stylist.styles.some(s => s.id === selectedStyleId))
-                    )
-                    .map((stylist) => (
-                    <SelectItem key={stylist.id} value={stylist.id}>
-                      {stylist.fullName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+                <AnimatePresence>
+                    {selectedCategoryId && (
+                        <motion.div 
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="space-y-2"
+                        >
+                        <Label className="text-base font-semibold">Braider Preference</Label>
+                        <Select value={selectedStylistId} onValueChange={setSelectedStylistId}>
+                            <SelectTrigger className="h-12 text-lg bg-background shadow-sm transition-all hover:border-primary">
+                            <SelectValue placeholder="Any Available Braider" />
+                            </SelectTrigger>
+                            <SelectContent>
+                            <SelectItem value="unassigned" className="font-medium text-primary">✨ Any Available Braider</SelectItem>
+                            {stylists
+                                .filter(stylist => 
+                                !selectedStyleId || 
+                                (stylist.styles && stylist.styles.some(s => s.id === selectedStyleId))
+                                )
+                                .map((stylist) => (
+                                <SelectItem key={stylist.id} value={stylist.id}>
+                                {stylist.fullName}
+                                </SelectItem>
+                            ))}
+                            </SelectContent>
+                        </Select>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </CardContent>
+          </Card>
         </div>
 
         <div className="space-y-4">
-          <Card>
+          <Card className="border-none shadow-md h-full bg-muted/10">
+            <CardHeader className="bg-muted/30 pb-4 border-b">
+                <CardTitle className="font-serif">Booking Summary</CardTitle>
+            </CardHeader>
             <CardContent className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Booking Summary</h3>
               {selectedPricing ? (
-                 <div className="space-y-3">
+                 <div className="space-y-4">
                     {styles.find(s => s.id === selectedStyleId)?.imageUrl && (
-                      <div className="mb-4 rounded-lg bg-muted flex items-center justify-center max-h-64 mx-auto border border-border">
+                      <div className="mb-4 rounded-xl overflow-hidden shadow-sm border border-border mx-auto max-w-[200px]">
                         <img
                           src={styles.find(s => s.id === selectedStyleId)?.imageUrl || ''}
                           alt="Selected Style"
-                          className="max-h-64 w-auto object-contain"
+                          className="w-full h-auto object-cover aspect-square"
                         />
                       </div>
                     )}
-                    <div className="flex justify-between">
-                        <span className="text-muted-foreground">Style:</span>
-                        <span className="font-medium">{styles.find(s => s.id === selectedStyleId)?.name}</span>
+                    <div className="space-y-2 text-sm">
+                        <div className="flex justify-between items-center bg-card p-3 rounded-lg shadow-sm">
+                            <span className="text-muted-foreground flex items-center gap-2"><Scissors className="w-4 h-4" /> Style</span>
+                            <span className="font-semibold">{styles.find(s => s.id === selectedStyleId)?.name}</span>
+                        </div>
+                        <div className="flex justify-between items-center bg-card p-3 rounded-lg shadow-sm">
+                            <span className="text-muted-foreground">Variation</span>
+                            <span className="font-medium">{availableVariations.find(v => v.id === selectedCategoryId)?.name}</span>
+                        </div>
+                        <div className="flex justify-between items-center bg-card p-3 rounded-lg shadow-sm">
+                            <span className="text-muted-foreground flex items-center gap-2"><User className="w-4 h-4" /> Braider</span>
+                            <span className="font-medium">
+                                {stylists.find(s => s.id === selectedStylistId)?.fullName || (selectedStylistId === 'unassigned' ? "Any Available Braider" : "Not selected")}
+                            </span>
+                        </div>
                     </div>
-                    <div className="flex justify-between">
-                        <span className="text-muted-foreground">Variation:</span>
-                        <span className="font-medium">{availableVariations.find(v => v.id === selectedCategoryId)?.name}</span>
-                    </div>
-                    <div className="flex justify-between">
-                        <span className="text-muted-foreground">Braider:</span>
-                        <span className="font-medium">
-                            {stylists.find(s => s.id === selectedStylistId)?.fullName || (selectedStylistId === 'unassigned' ? "Any Available Braider" : "Not selected")}
-                        </span>
-                    </div>
-                    <div className="border-t pt-3 mt-3 space-y-1">
+                    
+                    <div className="border-t border-dashed pt-4 mt-2 space-y-2">
                       <div className="flex justify-between text-sm text-muted-foreground">
-                        <span>Base price:</span>
+                        <span>Base price</span>
                         <span>${selectedPricing.price}</span>
                       </div>
                       {stylistSurcharge > 0 && (
                         <div className="flex justify-between text-sm text-muted-foreground">
-                            <span>Stylist surcharge ({stylists.find(s => s.id === selectedStylistId)?.fullName || 'Selected stylist'}):</span>
+                            <span>Stylist surcharge ({stylists.find(s => s.id === selectedStylistId)?.fullName})</span>
                             <span>+${stylistSurcharge}</span>
                         </div>
                       )}
                       
                       {appliedDiscountPercentage > 0 && discountedPrice !== null && (
                         <>
-                          <div className="flex justify-between text-sm text-emerald-700">
-                            <span>Promo discount ({appliedDiscountPercentage}%):</span>
+                          <div className="flex justify-between text-sm text-emerald-600 font-medium">
+                            <span>Promo discount ({appliedDiscountPercentage}%)</span>
                             <span>- ${(adjustedBasePrice - discountedPrice).toFixed(2)}</span>
                           </div>
-                          <div className="flex justify-between text-base font-semibold">
-                            <span>Promo price:</span>
+                          <div className="flex justify-between text-base font-bold text-primary">
+                            <span>Promo price</span>
                             <span>${discountedPrice.toFixed(2)}</span>
                           </div>
                         </>
                       )}
                       {appliedDiscountPercentage === 0 && effectivePromoPrice !== null && (
                         <>
-                          <div className="flex justify-between text-sm text-emerald-700">
-                            <span>Promo price for this offer:</span>
+                          <div className="flex justify-between text-sm text-emerald-600 font-medium">
+                            <span>Promo price</span>
                             <span>${effectivePromoPrice.toFixed(2)}</span>
                           </div>
                           <div className="flex justify-between text-xs text-muted-foreground">
@@ -852,23 +904,29 @@ export default function Booking() {
                         </>
                       )}
                       {appliedDiscountPercentage === 0 && effectivePromoPrice === null && stylistSurcharge > 0 && (
-                        <div className="flex justify-between text-base font-semibold">
-                            <span>Total price:</span>
+                        <div className="flex justify-between text-base font-bold">
+                            <span>Total price</span>
                             <span>${adjustedBasePrice}</span>
                         </div>
                       )}
-                      <div className="flex justify-between text-sm text-muted-foreground">
-                        <span>Duration:</span>
+                      <div className="flex justify-between text-sm text-muted-foreground pt-1">
+                        <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> Duration</span>
                         <span>{selectedPricing.durationMinutes} mins</span>
                       </div>
                     </div>
-                     <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 mt-4 text-sm text-yellow-800">
-                        <p className="font-bold">Deposit Required: ${TOTAL_DEPOSIT.toFixed(2)} (Includes 3.5% fee)</p>
-                        {/* <p className="mt-1 text-red-600 font-bold">This deposit secures your appointment. Note: A 3.5% transaction fee is applied to the deposit. The remaining service cost will be charged in store after the service is completed.</p> */}
+                     <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-4 mt-4 shadow-sm">
+                        <div className="flex justify-between items-center mb-1">
+                            <span className="text-yellow-800 text-sm font-medium">Deposit Required</span>
+                            <span className="text-yellow-900 font-bold text-lg">${TOTAL_DEPOSIT.toFixed(2)}</span>
+                        </div>
+                        <p className="text-[10px] text-yellow-700/80 text-right">Includes 3.5% processing fee</p>
                     </div>
                  </div>
               ) : (
-                <div className="text-center text-muted-foreground py-8">
+                <div className="text-center text-muted-foreground py-12 flex flex-col items-center">
+                    <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                        <Scissors className="w-6 h-6 opacity-50" />
+                    </div>
                     Select a style and variation to see pricing.
                 </div>
               )}
@@ -876,321 +934,389 @@ export default function Booking() {
           </Card>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 
   const renderStep3 = () => (
-    <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-500">
+    <motion.div 
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: -20 }}
+        transition={{ duration: 0.5 }}
+        className="space-y-6"
+    >
       <div className="flex flex-col md:flex-row gap-6">
          {/* Calendar Column */}
          <div className="w-full md:w-auto flex-shrink-0">
-             <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={(date) => {
-                    if (date) {
-                        setSelectedDate(date);
-                        setSelectedTime(null);
-                    }
-                }}
-                className="rounded-md border shadow-sm mx-auto bg-card"
-                disabled={(date) => date < startOfDay(new Date())}
-             />
+             <Card className="border-none shadow-md overflow-hidden h-full">
+                <CardHeader className="bg-primary/5 pb-4">
+                    <CardTitle className="text-lg font-serif">Select Date</CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 flex justify-center">
+                    <Calendar
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={(date) => {
+                            if (date) {
+                                setSelectedDate(date);
+                                setSelectedTime(null);
+                            }
+                        }}
+                        className="rounded-md border-none shadow-sm mx-auto bg-card"
+                        classNames={{
+                            day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+                            day_today: "bg-accent text-accent-foreground",
+                        }}
+                        disabled={(date) => date < startOfDay(new Date())}
+                    />
+                </CardContent>
+             </Card>
          </div>
          
          {/* Time Slots Column */}
          <div className="flex-1 min-w-0">
-            {selectedDate ? (
-                <>
-                    <div className="mb-4">
-                         <h3 className="font-semibold text-lg">
-                            Availability for {format(selectedDate, 'MMMM d, yyyy')}
-                         </h3>
-                    </div>
+             <Card className="border-none shadow-md h-full">
+                <CardHeader className="bg-primary/5 pb-4">
+                    <CardTitle className="text-lg font-serif">
+                        {selectedDate ? `Availability for ${format(selectedDate, 'MMMM d, yyyy')}` : 'Select a Date'}
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                    {selectedDate ? (
+                        <>
+                            {loading ? (
+                                <div className="h-64 flex flex-col items-center justify-center gap-3">
+                                    <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                                    <span className="text-muted-foreground text-sm">Checking availability...</span>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 animate-in fade-in duration-500">
+                                    {(() => {
+                                        const dateStr = format(selectedDate, 'yyyy-MM-dd');
+                                        const rawSlots = weeklyAvailability[dateStr] || [];
+                                        
+                                        // Filter out past time slots if the date is today
+                                        const now = new Date();
+                                        const isToday = isSameDay(selectedDate, now);
+                                        const slots = rawSlots.filter(slot => {
+                                            if (!isToday) return true;
+                                            
+                                            const [hours, minutes] = slot.time.split(':').map(Number);
+                                            const slotTime = new Date(selectedDate);
+                                            slotTime.setHours(hours, minutes, 0, 0);
+                                            
+                                            return slotTime > now;
+                                        });
 
-                    {loading ? (
-                        <div className="h-64 flex items-center justify-center">
-                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                        </div>
+                                        if (slots.length === 0) {
+                                            return (
+                                                <div className="col-span-full text-center text-muted-foreground py-12 border-2 border-dashed rounded-xl bg-muted/20 flex flex-col items-center justify-center">
+                                                    <Clock className="w-10 h-10 mb-3 opacity-30" />
+                                                    No available slots for this date.
+                                                </div>
+                                            );
+                                        }
+
+                                        return slots.map((slot) => (
+                                            <Button
+                                                key={`${dateStr}-${slot.time}`}
+                                                variant={selectedTime === slot.time ? "default" : "outline"}
+                                                className={cn(
+                                                    "w-full h-12 transition-all duration-200",
+                                                    selectedTime === slot.time 
+                                                        ? "bg-primary text-primary-foreground shadow-lg scale-105 font-bold ring-2 ring-primary ring-offset-2" 
+                                                        : "hover:bg-primary/10 hover:border-primary/50 hover:text-primary",
+                                                    !slot.available && "opacity-50 cursor-not-allowed bg-muted hover:bg-muted hover:text-muted-foreground"
+                                                )}
+                                                disabled={!slot.available}
+                                                onClick={() => handleTimeSelect(selectedDate, slot.time)}
+                                            >
+                                                {formatTimeDisplay(slot.time)}
+                                            </Button>
+                                        ));
+                                    })()}
+                                </div>
+                            )}
+                        </>
                     ) : (
-                        <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-                            {(() => {
-                                const dateStr = format(selectedDate, 'yyyy-MM-dd');
-                                const rawSlots = weeklyAvailability[dateStr] || [];
-                                
-                                // Filter out past time slots if the date is today
-                                const now = new Date();
-                                const isToday = isSameDay(selectedDate, now);
-                                const slots = rawSlots.filter(slot => {
-                                    if (!isToday) return true;
-                                    
-                                    const [hours, minutes] = slot.time.split(':').map(Number);
-                                    const slotTime = new Date(selectedDate);
-                                    slotTime.setHours(hours, minutes, 0, 0);
-                                    
-                                    return slotTime > now;
-                                });
-
-                                if (slots.length === 0) {
-                                    return (
-                                        <div className="col-span-full text-center text-muted-foreground py-8 border rounded-md border-dashed">
-                                            No available slots for this date.
-                                        </div>
-                                    );
-                                }
-
-                                return slots.map((slot) => (
-                                    <Button
-                                        key={`${dateStr}-${slot.time}`}
-                                        variant={selectedTime === slot.time ? "default" : "outline"}
-                                        className={cn(
-                                            "w-full h-10",
-                                            !slot.available && "opacity-50 cursor-not-allowed bg-muted"
-                                        )}
-                                        disabled={!slot.available}
-                                        onClick={() => handleTimeSelect(selectedDate, slot.time)}
-                                    >
-                                        {formatTimeDisplay(slot.time)}
-                                    </Button>
-                                ));
-                            })()}
+                        <div className="h-64 flex flex-col items-center justify-center text-muted-foreground border-2 border-dashed rounded-xl bg-muted/10">
+                            <CalendarIcon className="w-12 h-12 mb-3 opacity-20" />
+                            Select a date on the calendar to view availability
                         </div>
                     )}
-                </>
-            ) : (
-                <div className="h-full flex items-center justify-center text-muted-foreground border rounded-md border-dashed p-12">
-                    Select a date to view availability
-                </div>
-            )}
+                </CardContent>
+             </Card>
          </div>
       </div>
-    </div>
+    </motion.div>
   );
 
   const renderStep4 = () => (
-    <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in zoom-in-95 duration-500">
-        <div className="grid gap-4">
-            <div className="grid gap-2">
-                <Label htmlFor="fullName">Full Name</Label>
-                <Input 
-                    id="fullName" 
-                    value={guestDetails.fullName} 
-                    onChange={(e) => setGuestDetails({...guestDetails, fullName: e.target.value})}
-                    placeholder="Jane Doe"
-                />
-            </div>
-            <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input 
-                    id="email" 
-                    type="email"
-                    value={guestDetails.email} 
-                    onChange={(e) => setGuestDetails({...guestDetails, email: e.target.value})}
-                    placeholder="jane@example.com"
-                />
-            </div>
-            <div className="grid gap-2">
-                <Label htmlFor="phone">Phone Number</Label>
-                <Input 
-                    id="phone" 
-                    type="tel"
-                    value={guestDetails.phone} 
-                    onChange={(e) => setGuestDetails({...guestDetails, phone: e.target.value})}
-                    placeholder="(555) 123-4567"
-                />
-            </div>
-            <div className="grid gap-2">
-                <Label htmlFor="address">Address (Optional)</Label>
-                <Input 
-                    id="address" 
-                    value={guestDetails.address} 
-                    onChange={(e) => setGuestDetails({...guestDetails, address: e.target.value})}
-                    placeholder="123 Main St"
-                />
-            </div>
-
-            {!isLoggedIn && (
-               <div className="flex items-center space-x-2 mt-2">
-                  <Checkbox 
-                      id="smsConsent" 
-                      checked={guestDetails.smsConsent}
-                      onCheckedChange={(checked) => setGuestDetails({...guestDetails, smsConsent: checked as boolean})}
-                  />
-                  <Label htmlFor="smsConsent" className="text-sm font-normal cursor-pointer">
-                      I consent to receiving SMS and email notifications
-                  </Label>
-               </div>
-            )}
-
-            {isLoggedIn && (
-               <div className="flex items-center space-x-2 mt-2">
-                  <Checkbox
-                      id="authSmsConsentStep3"
-                      checked={authSmsConsent}
-                      onCheckedChange={(checked) => {
-                          const next = checked as boolean;
-                          if (!next && authSmsConsent) {
-                              setShowAuthConsentDialog(true);
-                              return;
-                          }
-                          setAuthSmsConsent(next);
-                          setGuestDetails(prev => ({ ...prev, smsConsent: next }));
-                          userService.updateNotificationConsent(next).catch(() => {});
-                          authService.getMe().catch(() => {});
-                      }}
-                  />
-                  <Label htmlFor="authSmsConsentStep3" className="text-sm font-normal cursor-pointer">
-                     I consent to receiving SMS and email notifications
-                  </Label>
-               </div>
-            )}
-
-             {!isLoggedIn && (
-                <div className="grid grid-cols-2 gap-4">
+    <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        transition={{ duration: 0.5 }}
+        className="max-w-2xl mx-auto space-y-6"
+    >
+        <Card className="border-none shadow-lg overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 pb-6">
+                <CardTitle className="font-serif text-center text-2xl">Guest Details</CardTitle>
+                <CardDescription className="text-center">Please provide your contact information</CardDescription>
+            </CardHeader>
+            <CardContent className="p-8 space-y-6">
+                <div className="grid gap-6">
                     <div className="grid gap-2">
-                        <Label>Birthday (Optional)</Label>
-                        <Select onValueChange={(v) => setGuestDetails({...guestDetails, birthMonth: v})}>
-                            <SelectTrigger><SelectValue placeholder="Month" /></SelectTrigger>
-                            <SelectContent>
-                                {Array.from({length: 12}, (_, i) => i + 1).map(m => (
-                                    <SelectItem key={m} value={m.toString()}>{format(new Date(2000, m-1, 1), 'MMMM')}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <Label htmlFor="fullName" className="flex items-center gap-2"><User className="w-4 h-4" /> Full Name</Label>
+                        <Input 
+                            id="fullName" 
+                            value={guestDetails.fullName} 
+                            onChange={(e) => setGuestDetails({...guestDetails, fullName: e.target.value})}
+                            placeholder="Jane Doe"
+                            className="h-12 bg-muted/10 focus:bg-background transition-colors"
+                        />
                     </div>
-                     <div className="grid gap-2">
-                        <Label>&nbsp;</Label>
-                        <Select onValueChange={(v) => setGuestDetails({...guestDetails, birthDay: v})}>
-                            <SelectTrigger><SelectValue placeholder="Day" /></SelectTrigger>
-                            <SelectContent>
-                                {Array.from({length: 31}, (_, i) => i + 1).map(d => (
-                                    <SelectItem key={d} value={d.toString()}>{d}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                    <div className="grid md:grid-cols-2 gap-6">
+                        <div className="grid gap-2">
+                            <Label htmlFor="email" className="flex items-center gap-2"><Mail className="w-4 h-4" /> Email</Label>
+                            <Input 
+                                id="email" 
+                                type="email"
+                                value={guestDetails.email} 
+                                onChange={(e) => setGuestDetails({...guestDetails, email: e.target.value})}
+                                placeholder="jane@example.com"
+                                className="h-12 bg-muted/10 focus:bg-background transition-colors"
+                            />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="phone" className="flex items-center gap-2"><Phone className="w-4 h-4" /> Phone Number</Label>
+                            <Input 
+                                id="phone" 
+                                type="tel"
+                                value={guestDetails.phone} 
+                                onChange={(e) => setGuestDetails({...guestDetails, phone: e.target.value})}
+                                placeholder="(555) 123-4567"
+                                className="h-12 bg-muted/10 focus:bg-background transition-colors"
+                            />
+                        </div>
                     </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="address" className="flex items-center gap-2"><MapPin className="w-4 h-4" /> Address (Optional)</Label>
+                        <Input 
+                            id="address" 
+                            value={guestDetails.address} 
+                            onChange={(e) => setGuestDetails({...guestDetails, address: e.target.value})}
+                            placeholder="123 Main St"
+                            className="h-12 bg-muted/10 focus:bg-background transition-colors"
+                        />
+                    </div>
+
+                    <div className="bg-muted/30 p-4 rounded-lg border border-muted space-y-4">
+                        {!isLoggedIn && (
+                        <div className="flex items-start space-x-3">
+                            <Checkbox 
+                                id="smsConsent" 
+                                checked={guestDetails.smsConsent}
+                                onCheckedChange={(checked) => setGuestDetails({...guestDetails, smsConsent: checked as boolean})}
+                                className="mt-1"
+                            />
+                            <Label htmlFor="smsConsent" className="text-sm font-normal cursor-pointer leading-relaxed">
+                                I consent to receiving SMS and email notifications about my appointment and exclusive offers.
+                            </Label>
+                        </div>
+                        )}
+
+                        {isLoggedIn && (
+                        <div className="flex items-start space-x-3">
+                            <Checkbox
+                                id="authSmsConsentStep3"
+                                checked={authSmsConsent}
+                                onCheckedChange={(checked) => {
+                                    const next = checked as boolean;
+                                    if (!next && authSmsConsent) {
+                                        setShowAuthConsentDialog(true);
+                                        return;
+                                    }
+                                    setAuthSmsConsent(next);
+                                    setGuestDetails(prev => ({ ...prev, smsConsent: next }));
+                                    userService.updateNotificationConsent(next).catch(() => {});
+                                    authService.getMe().catch(() => {});
+                                }}
+                                className="mt-1"
+                            />
+                            <Label htmlFor="authSmsConsentStep3" className="text-sm font-normal cursor-pointer leading-relaxed">
+                                I consent to receiving SMS and email notifications about my appointment and exclusive offers.
+                            </Label>
+                        </div>
+                        )}
+                    </div>
+
+                    {!isLoggedIn && (
+                        <div className="grid grid-cols-2 gap-4 border-t pt-4">
+                            <div className="grid gap-2">
+                                <Label>Birthday (Optional)</Label>
+                                <Select onValueChange={(v) => setGuestDetails({...guestDetails, birthMonth: v})}>
+                                    <SelectTrigger className="bg-muted/10"><SelectValue placeholder="Month" /></SelectTrigger>
+                                    <SelectContent>
+                                        {Array.from({length: 12}, (_, i) => i + 1).map(m => (
+                                            <SelectItem key={m} value={m.toString()}>{format(new Date(2000, m-1, 1), 'MMMM')}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="grid gap-2">
+                                <Label>&nbsp;</Label>
+                                <Select onValueChange={(v) => setGuestDetails({...guestDetails, birthDay: v})}>
+                                    <SelectTrigger className="bg-muted/10"><SelectValue placeholder="Day" /></SelectTrigger>
+                                    <SelectContent>
+                                        {Array.from({length: 31}, (_, i) => i + 1).map(d => (
+                                            <SelectItem key={d} value={d.toString()}>{d}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                    )}
                 </div>
-            )}
-        </div>
-    </div>
+            </CardContent>
+        </Card>
+    </motion.div>
   );
 
   const renderStep5 = () => (
-      <div className="max-w-md mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-8 duration-500">
-          <Card>
-              <CardContent className="p-6">
-                  <h3 className="text-xl font-bold mb-4">Confirm & Pay Deposit</h3>
-                  <div className="space-y-4 mb-6">
-                      <div className="flex justify-between py-2 border-b">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        transition={{ duration: 0.5 }}
+        className="max-w-md mx-auto space-y-6"
+      >
+          <Card className="border-none shadow-xl overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 pb-6 border-b">
+                  <CardTitle className="text-2xl font-bold font-serif text-center">Confirm & Pay Deposit</CardTitle>
+                  <CardDescription className="text-center">Secure your appointment</CardDescription>
+              </CardHeader>
+              <CardContent className="p-8">
+                  <div className="space-y-4 mb-8 bg-muted/20 p-6 rounded-xl border border-muted">
+                      <div className="flex justify-between py-2 border-b border-dashed border-muted-foreground/30">
                           <span className="text-muted-foreground">Service</span>
-                          <span className="font-medium">
-                            {styles.find(s => s.id === selectedStyleId)?.name} - {availableVariations.find(v => v.id === selectedCategoryId)?.name}
+                          <span className="font-medium text-right">
+                            {styles.find(s => s.id === selectedStyleId)?.name} <br/>
+                            <span className="text-xs text-muted-foreground font-normal">{availableVariations.find(v => v.id === selectedCategoryId)?.name}</span>
                           </span>
                       </div>
-                      <div className="flex justify-between py-2 border-b">
+                      <div className="flex justify-between py-2 border-b border-dashed border-muted-foreground/30">
                           <span className="text-muted-foreground">Date & Time</span>
-                          <span className="font-medium">
-                              {selectedDate && format(selectedDate, 'MMM d, yyyy')} at {formatTimeDisplay(selectedTime)}
+                          <span className="font-medium text-right">
+                              {selectedDate && format(selectedDate, 'MMM d, yyyy')} <br/>
+                              <span className="text-xs text-muted-foreground font-normal">{formatTimeDisplay(selectedTime)}</span>
                           </span>
                       </div>
                       {selectedPricing && (
-                        <div className="space-y-1 py-2 border-b">
+                        <div className="space-y-2 py-2 border-b border-dashed border-muted-foreground/30">
                           <div className="flex justify-between text-sm text-muted-foreground">
                             <span>Base price</span>
                             <span>${selectedPricing.price}</span>
                           </div>
                           {stylistSurcharge > 0 && (
                             <div className="flex justify-between text-sm text-muted-foreground">
-                                <span>Master Stylist Surcharge (Victoria)</span>
+                                <span>Master Stylist Surcharge</span>
                                 <span>+${stylistSurcharge}</span>
                             </div>
                           )}
                           {appliedDiscountPercentage > 0 && discountedPrice !== null && (
-                            <>
-                              <div className="flex justify-between text-sm text-emerald-700">
+                            <div className="flex justify-between text-sm text-emerald-600">
                                 <span>Promo discount ({appliedDiscountPercentage}%)</span>
                                 <span>- ${(adjustedBasePrice - discountedPrice).toFixed(2)}</span>
-                              </div>
-                              <div className="flex justify-between text-base font-semibold">
-                                <span>Promo price</span>
-                                <span>${discountedPrice.toFixed(2)}</span>
-                              </div>
-                            </>
-                          )}
-                          {appliedDiscountPercentage === 0 && effectivePromoPrice !== null && (
-                            <div className="flex justify-between text-base font-semibold">
-                              <span>Promo price</span>
-                              <span>${effectivePromoPrice.toFixed(2)}</span>
                             </div>
                           )}
-                          {appliedDiscountPercentage === 0 && effectivePromoPrice === null && (
-                            <div className="flex justify-between text-base font-semibold">
-                              <span>Total price</span>
-                              <span>${adjustedBasePrice}</span>
-                            </div>
-                          )}
+                          <div className="flex justify-between text-base font-semibold pt-2">
+                              <span>Total Service Price</span>
+                              <span>${(discountedPrice || effectivePromoPrice || adjustedBasePrice).toFixed(2)}</span>
+                          </div>
                         </div>
                       )}
                       <div className="flex justify-between py-2 text-sm">
                           <span className="text-muted-foreground">Booking Deposit</span>
                           <span className="font-medium">${depositAmount.toFixed(2)}</span>
                       </div>
-                      <div className="flex justify-between py-2 text-sm border-b">
+                      <div className="flex justify-between py-2 text-sm border-b border-muted-foreground/30">
                           <span className="text-muted-foreground">Processing Fee (3.5%)</span>
                           <span className="font-medium">${PROCESSING_FEE.toFixed(2)}</span>
                       </div>
-                      <div className="flex justify-between py-2 text-lg font-bold">
+                      <div className="flex justify-between pt-4 text-xl font-bold text-primary">
                           <span>Deposit Due Now</span>
                           <span>${TOTAL_DEPOSIT.toFixed(2)}</span>
                    </div>
                   </div>
 
                   {clientSecret && (
-                      <Elements stripe={stripePromise} options={{ clientSecret }}>
-                          <CheckoutForm onSuccess={handlePaymentSuccess} amount={TOTAL_DEPOSIT_CENTS} />
-                      </Elements>
+                      <div className="animate-in fade-in zoom-in-95 duration-500">
+                        <Elements stripe={stripePromise} options={{ clientSecret }}>
+                            <CheckoutForm onSuccess={handlePaymentSuccess} amount={TOTAL_DEPOSIT_CENTS} />
+                        </Elements>
+                      </div>
                   )}
                   {!clientSecret && (
-                     <div className="flex flex-col items-center justify-center py-8 text-center">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
-                        <p className="text-muted-foreground">Preparing secure checkout...</p>
+                     <div className="flex flex-col items-center justify-center py-12 text-center bg-muted/10 rounded-xl border border-dashed">
+                        <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
+                        <p className="text-muted-foreground font-medium">Preparing secure checkout...</p>
                      </div>
                   )}
                   
                   {paymentError && (
-                      <div className="text-destructive text-sm mt-4 text-center">
+                      <div className="bg-destructive/10 text-destructive text-sm p-4 rounded-lg mt-4 text-center border border-destructive/20 flex flex-col items-center gap-2">
+                          <AlertCircle className="w-5 h-5" />
                           {paymentError}
-                          <Button variant="link" onClick={initializePayment} className="pl-1">Retry</Button>
+                          <Button variant="outline" size="sm" onClick={initializePayment} className="mt-2 border-destructive/30 hover:bg-destructive/10 text-destructive">Retry Payment</Button>
                       </div>
                   )}
               </CardContent>
           </Card>
-      </div>
+      </motion.div>
   );
 
   const renderStep6 = () => (
-      <div className="max-w-md mx-auto text-center space-y-6 py-12 animate-in fade-in zoom-in-95 duration-500">
-          <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto">
-              <Check className="w-10 h-10" />
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5, type: "spring" }}
+        className="max-w-md mx-auto text-center space-y-8 py-12"
+      >
+          <div className="w-24 h-24 bg-gradient-to-br from-green-100 to-emerald-100 text-green-600 rounded-full flex items-center justify-center mx-auto shadow-lg ring-8 ring-green-50">
+              <Check className="w-12 h-12" />
           </div>
-          <h2 className="text-3xl font-bold">Booking Confirmed!</h2>
-          <div className="text-muted-foreground space-y-2">
-              <p>
-                  Thank you for booking with {SALON_INFO.name}. A confirmation email has been sent to you.
-              </p>
-              <p>
-                  To change your booking, text {SALON_INFO.bookingPhone}.
-              </p>
-              <p>
-                  For other enquiries, text {SALON_INFO.inquiryPhone}.
-              </p>
+          <div className="space-y-4">
+            <h2 className="text-4xl font-bold font-serif text-foreground">Booking Confirmed!</h2>
+            <div className="text-muted-foreground space-y-3 text-lg leading-relaxed max-w-sm mx-auto">
+                <p>
+                    Thank you for booking with <span className="font-semibold text-foreground">{SALON_INFO.name}</span>.
+                </p>
+                <p>
+                    A confirmation email has been sent to <span className="font-medium text-foreground">{guestDetails.email}</span>.
+                </p>
+            </div>
           </div>
-          <div className="pt-6">
-              <Button onClick={() => navigate('/')} className="w-full">
+          
+          <Card className="bg-muted/30 border-dashed border-muted-foreground/30 max-w-sm mx-auto">
+            <CardContent className="p-6 space-y-3 text-sm text-muted-foreground">
+                <p className="flex items-center gap-2 justify-center">
+                    <Phone className="w-4 h-4" />
+                    To change: {SALON_INFO.bookingPhone}
+                </p>
+                <p className="flex items-center gap-2 justify-center">
+                    <Mail className="w-4 h-4" />
+                    Enquiries: {SALON_INFO.inquiryPhone}
+                </p>
+            </CardContent>
+          </Card>
+
+          <div className="pt-4">
+              <Button onClick={() => navigate('/')} className="w-full max-w-xs h-12 text-lg shadow-lg hover:shadow-xl transition-all rounded-full bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90">
                   Return to Home
               </Button>
           </div>
-      </div>
+      </motion.div>
   );
 
   return (
@@ -1198,87 +1324,103 @@ export default function Booking() {
       {renderProgressBar()}
       
       <div className="container mx-auto px-4">
-        {step === 1 && renderStep1()}
-        {step === 2 && renderPromoStep()}
-        {step === 3 && renderStep2()}
-        {step === 4 && renderStep3()}
-        {step === 5 && renderStep4()}
-        {step === 6 && renderStep5()}
-        {step === 7 && renderStep6()}
+        <AnimatePresence mode="wait">
+            {step === 1 && renderStep1()}
+            {step === 2 && renderPromoStep()}
+            {step === 3 && renderStep2()}
+            {step === 4 && renderStep3()}
+            {step === 5 && renderStep4()}
+            {step === 6 && renderStep5()}
+            {step === 7 && renderStep6()}
+        </AnimatePresence>
 
         {step < 7 && (
-            <div className="max-w-4xl mx-auto mt-8 flex justify-between">
+            <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="max-w-4xl mx-auto mt-12 flex justify-between items-center"
+            >
                 <Button 
-                    variant="outline" 
+                    variant="ghost" 
                     onClick={handleBack}
                     disabled={step === 1 || loading}
-                    className={step === 1 ? "invisible" : ""}
+                    className={cn(
+                        "gap-2 hover:bg-transparent hover:text-primary transition-colors",
+                        step === 1 ? "invisible" : ""
+                    )}
                 >
-                    Back
+                    <ChevronLeft className="w-4 h-4" /> Back
                 </Button>
                 
                 {step < 6 && (
                     <Button 
                         onClick={handleNext} 
                         disabled={loading}
-                        className={step === 1 && !policyAgreed ? "hidden" : ""}
+                        className={cn(
+                            "gap-2 px-8 h-12 rounded-full shadow-lg hover:shadow-xl transition-all bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-white font-semibold text-lg",
+                            step === 1 && !policyAgreed ? "opacity-0 pointer-events-none" : "opacity-100"
+                        )}
                     >
-                        {step === 1 ? "Book Now" : "Next Step"}
+                        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+                            <>
+                                {step === 1 ? "Book Now" : "Next Step"} <ChevronRight className="w-5 h-5" />
+                            </>
+                        )}
                     </Button>
                 )}
-            </div>
+            </motion.div>
         )}
       </div>
 
       <AlertDialog open={showConsentDialog} onOpenChange={setShowConsentDialog}>
-        <AlertDialogContent className="max-h-[90vh] w-[95vw] sm:max-w-lg flex flex-col">
+        <AlertDialogContent className="max-h-[90vh] w-[95vw] sm:max-w-lg flex flex-col border-none shadow-2xl">
           <div className="flex-1 overflow-y-auto px-1">
             <AlertDialogHeader>
-              <AlertDialogTitle>Stay in the loop?</AlertDialogTitle>
-              <AlertDialogDescription>
+              <AlertDialogTitle className="text-2xl font-serif text-center">Stay in the loop?</AlertDialogTitle>
+              <AlertDialogDescription className="text-center text-base mt-2">
                 Are you sure you don't want to receive notifications from {SALON_INFO.name} for updates and bonuses?
               </AlertDialogDescription>
             </AlertDialogHeader>
           </div>
-          <AlertDialogFooter>
+          <AlertDialogFooter className="sm:justify-center gap-3 mt-6">
             <AlertDialogCancel onClick={() => {
                 setShowConsentDialog(false);
                 setStep(5);
-            }}>No, thanks</AlertDialogCancel>
+            }} className="w-full sm:w-auto border-none hover:bg-muted">No, thanks</AlertDialogCancel>
             <AlertDialogAction onClick={() => {
                 setGuestDetails(prev => ({...prev, smsConsent: true}));
                 setShowConsentDialog(false);
                 setStep(5);
-            }}>Yes, I want updates</AlertDialogAction>
+            }} className="w-full sm:w-auto bg-primary hover:bg-primary/90">Yes, I want updates</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
       <AlertDialog open={showAuthConsentDialog} onOpenChange={setShowAuthConsentDialog}>
-        <AlertDialogContent className="max-h-[90vh] w-[95vw] sm:max-w-lg flex flex-col">
+        <AlertDialogContent className="max-h-[90vh] w-[95vw] sm:max-w-lg flex flex-col border-none shadow-2xl">
           <div className="flex-1 overflow-y-auto px-1">
             <AlertDialogHeader>
-              <AlertDialogTitle>Stay in the loop?</AlertDialogTitle>
-              <AlertDialogDescription>
+              <AlertDialogTitle className="text-2xl font-serif text-center">Stay in the loop?</AlertDialogTitle>
+              <AlertDialogDescription className="text-center text-base mt-2">
                 Are you sure you don't want to receive notifications from {SALON_INFO.name} for updates and bonuses?
               </AlertDialogDescription>
             </AlertDialogHeader>
           </div>
-          <AlertDialogFooter>
+          <AlertDialogFooter className="sm:justify-center gap-3 mt-6">
             <AlertDialogCancel onClick={() => {
               setAuthSmsConsent(false);
               setGuestDetails(prev => ({ ...prev, smsConsent: false }));
               setShowAuthConsentDialog(false);
               userService.updateNotificationConsent(false).catch(() => {});
               authService.getMe().catch(() => {});
-            }}>No, thanks</AlertDialogCancel>
+            }} className="w-full sm:w-auto border-none hover:bg-muted">No, thanks</AlertDialogCancel>
             <AlertDialogAction onClick={() => {
               setAuthSmsConsent(true);
               setGuestDetails(prev => ({ ...prev, smsConsent: true }));
               setShowAuthConsentDialog(false);
               userService.updateNotificationConsent(true).catch(() => {});
               authService.getMe().catch(() => {});
-            }}>Yes, I want updates</AlertDialogAction>
+            }} className="w-full sm:w-auto bg-primary hover:bg-primary/90">Yes, I want updates</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

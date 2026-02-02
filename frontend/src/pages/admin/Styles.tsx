@@ -39,6 +39,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { motion, AnimatePresence } from "framer-motion";
+import { Badge } from "@/components/ui/badge";
 
 const styleSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -140,6 +142,7 @@ const Styles = () => {
   }, [page, debouncedSearch]);
 
   const onStyleSubmit = async (data: StyleFormValues) => {
+    setIsStyleSubmitting(true);
     try {
       if (editingStyle) {
         await styleService.updateStyle(editingStyle.id, data);
@@ -153,6 +156,8 @@ const Styles = () => {
     } catch (error) {
       toast.error("Failed to save style");
       console.error(error);
+    } finally {
+      setIsStyleSubmitting(false);
     }
   };
 
@@ -251,10 +256,25 @@ const Styles = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="space-y-6"
+    >
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Styles</h1>
-        <Button onClick={openCreateStyleDialog}>
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+            Styles Management
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Create and manage hair styles and their pricing variations.
+          </p>
+        </div>
+        <Button 
+          onClick={openCreateStyleDialog}
+          className="bg-purple-600 hover:bg-purple-700 text-white shadow-md hover:shadow-lg transition-all duration-300"
+        >
           <Plus className="mr-2 h-4 w-4" /> Add Style
         </Button>
       </div>
@@ -266,15 +286,15 @@ const Styles = () => {
             placeholder="Search styles..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-8"
+            className="pl-8 border-purple-100 focus:border-purple-300 focus:ring-purple-200"
           />
         </div>
       </div>
 
-      <div className="rounded-md border">
+      <div className="rounded-md border shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow>
+            <TableRow className="bg-purple-50/50 hover:bg-purple-50/50">
               <TableHead>Image</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Variations Configured</TableHead>
@@ -282,153 +302,176 @@ const Styles = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={4} className="h-24 text-center">
-                  <Loader2 className="mx-auto h-6 w-6 animate-spin" />
-                </TableCell>
-              </TableRow>
-            ) : styles.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={4} className="h-24 text-center">
-                  {debouncedSearch ? "No styles found matching your search." : "No styles found. Add one to get started."}
-                </TableCell>
-              </TableRow>
-            ) : (
-              styles.map((style) => (
-                <TableRow key={style.id}>
-                  <TableCell>
-                    {style.imageUrl ? (
-                      <img 
-                        src={style.imageUrl} 
-                        alt={style.name} 
-                        className="h-10 w-10 rounded-full object-cover" 
-                      />
-                    ) : (
-                      <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-                        <ImageIcon className="h-5 w-5 text-muted-foreground" />
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell className="font-medium">{style.name}</TableCell>
-                  <TableCell>{style.pricing?.length || 0}</TableCell>
-                  <TableCell className="text-right space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => openPricingDialog(style)}
-                    >
-                      <DollarSign className="mr-2 h-4 w-4" />
-                      Pricing
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => openEditStyleDialog(style)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => onDeleteStyle(style.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+            <AnimatePresence>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="h-24 text-center">
+                    <Loader2 className="mx-auto h-6 w-6 animate-spin text-purple-600" />
                   </TableCell>
                 </TableRow>
-              ))
-            )}
+              ) : styles.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="h-24 text-center">
+                    {debouncedSearch ? "No styles found matching your search." : "No styles found. Add one to get started."}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                styles.map((style, index) => (
+                  <motion.tr
+                    key={style.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="group hover:bg-muted/30 transition-colors border-b last:border-0"
+                  >
+                    <TableCell>
+                      {style.imageUrl ? (
+                        <img 
+                          src={style.imageUrl} 
+                          alt={style.name} 
+                          className="h-10 w-10 rounded-full object-cover ring-2 ring-white shadow-sm" 
+                        />
+                      ) : (
+                        <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center ring-2 ring-white shadow-sm">
+                          <ImageIcon className="h-5 w-5 text-purple-400" />
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell className="font-medium text-base">{style.name}</TableCell>
+                    <TableCell>
+                      <Badge variant="secondary" className="bg-purple-100 text-purple-700 hover:bg-purple-200">
+                        {style.pricing?.length || 0} variations
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openPricingDialog(style)}
+                        className="hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700 transition-colors"
+                      >
+                        <DollarSign className="mr-2 h-4 w-4" />
+                        Pricing
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openEditStyleDialog(style)}
+                        className="hover:bg-purple-50 hover:text-purple-700 transition-colors"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-muted-foreground hover:text-red-600 hover:bg-red-50 transition-colors"
+                        onClick={() => onDeleteStyle(style.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </motion.tr>
+                ))
+              )}
+            </AnimatePresence>
           </TableBody>
         </Table>
       </div>
 
       {/* Pagination Controls */}
-      <div className="flex items-center justify-end space-x-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setPage((p) => Math.max(1, p - 1))}
-          disabled={page === 1 || isLoading}
-        >
-          <ChevronLeft className="h-4 w-4" />
-          Previous
-        </Button>
-        <div className="text-sm font-medium">
-          Page {page} of {totalPages}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-end space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1 || isLoading}
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Previous
+          </Button>
+          <div className="text-sm font-medium">
+            Page {page} of {totalPages}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages || isLoading}
+          >
+            Next
+            <ChevronRight className="h-4 w-4" />
+          </Button>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-          disabled={page === totalPages || isLoading}
-        >
-          Next
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-      </div>
+      )}
 
       {/* Create/Edit Style Dialog */}
       <Dialog open={isStyleDialogOpen} onOpenChange={setIsStyleDialogOpen}>
         <DialogContent className="max-h-[90vh] flex flex-col w-[95vw] sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>{editingStyle ? "Edit Style" : "Create Style"}</DialogTitle>
+            <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              {editingStyle ? "Edit Style" : "Create Style"}
+            </DialogTitle>
             <DialogDescription>
               Manage your salon styles (e.g., Knotless Braids).
             </DialogDescription>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto px-1">
-          <Form {...styleForm}>
-            <form onSubmit={styleForm.handleSubmit(onStyleSubmit)} className="space-y-4">
-              <FormField
-                control={styleForm.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. Knotless Braids" {...field} />
-                    </FormControl>
-                    <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={styleForm.control}
-            name="image"
-            render={({ field: { value, onChange, ...fieldProps } }) => (
-              <FormItem>
-                <FormLabel>Style Image (Optional)</FormLabel>
-                <FormControl>
-                  <Input
-                    {...fieldProps}
-                    type="file"
-                    accept="image/*"
-                    onChange={(event) => {
-                      onChange(event.target.files && event.target.files[0]);
-                    }}
-                    value=""
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <DialogFooter>
-                <Button type="submit" disabled={isStyleSubmitting}>
-                  {isStyleSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    "Save"
+            <Form {...styleForm}>
+              <form onSubmit={styleForm.handleSubmit(onStyleSubmit)} className="space-y-4">
+                <FormField
+                  control={styleForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. Knotless Braids" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
+                />
+                <FormField
+                  control={styleForm.control}
+                  name="image"
+                  render={({ field: { value, onChange, ...fieldProps } }) => (
+                    <FormItem>
+                      <FormLabel>Style Image (Optional)</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...fieldProps}
+                          type="file"
+                          accept="image/*"
+                          onChange={(event) => {
+                            onChange(event.target.files && event.target.files[0]);
+                          }}
+                          value=""
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <DialogFooter>
+                  <Button 
+                    type="submit" 
+                    disabled={isStyleSubmitting}
+                    className="w-full bg-purple-600 hover:bg-purple-700"
+                  >
+                    {isStyleSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      "Save Style"
+                    )}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
           </div>
         </DialogContent>
       </Dialog>
@@ -437,131 +480,136 @@ const Styles = () => {
       <Dialog open={isPricingDialogOpen} onOpenChange={setIsPricingDialogOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col w-[95vw]">
           <DialogHeader>
-            <DialogTitle>Manage Pricing: {selectedStyle?.name}</DialogTitle>
+            <DialogTitle className="text-xl font-bold">Manage Pricing: <span className="text-purple-600">{selectedStyle?.name}</span></DialogTitle>
             <DialogDescription>
               Set prices for different variations (categories) of this style.
             </DialogDescription>
           </DialogHeader>
           
           <div className="flex-1 overflow-y-auto px-1">
-          <div className="space-y-6">
-            {/* Add New Pricing Form */}
-            <div className="bg-muted/50 p-4 rounded-lg">
-              <h4 className="text-sm font-medium mb-4">Add/Update Pricing</h4>
-              <Form {...pricingForm}>
-                <form onSubmit={pricingForm.handleSubmit(onPricingSubmit)} className="flex items-end gap-4">
-                  <FormField
-                    control={pricingForm.control}
-                    name="categoryId"
-                    render={({ field }) => (
-                      <FormItem className="flex-1">
-                        <FormLabel>Variation (Category)</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select variation" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {categories.map((category) => (
-                              <SelectItem key={category.id} value={category.id}>
-                                {category.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={pricingForm.control}
-                    name="price"
-                    render={({ field }) => (
-                      <FormItem className="w-24">
-                        <FormLabel>Price ($)</FormLabel>
-                        <FormControl>
-                          <Input type="number" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={pricingForm.control}
-                    name="durationMinutes"
-                    render={({ field }) => (
-                      <FormItem className="w-24">
-                        <FormLabel>Mins</FormLabel>
-                        <FormControl>
-                          <Input type="number" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="submit" disabled={isPricingSubmitting}>
-                    {isPricingSubmitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      "Add/Update"
-                    )}
-                  </Button>
-                </form>
-              </Form>
-            </div>
+            <div className="space-y-6">
+              {/* Add New Pricing Form */}
+              <div className="bg-purple-50/50 border border-purple-100 p-4 rounded-lg">
+                <h4 className="text-sm font-medium mb-4 text-purple-700 flex items-center gap-2">
+                  <Plus className="h-4 w-4" /> Add/Update Pricing
+                </h4>
+                <Form {...pricingForm}>
+                  <form onSubmit={pricingForm.handleSubmit(onPricingSubmit)} className="flex flex-col sm:flex-row items-end gap-4">
+                    <FormField
+                      control={pricingForm.control}
+                      name="categoryId"
+                      render={({ field }) => (
+                        <FormItem className="flex-1 w-full">
+                          <FormLabel>Variation (Category)</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger className="bg-white">
+                                <SelectValue placeholder="Select variation" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {categories.map((category) => (
+                                <SelectItem key={category.id} value={category.id}>
+                                  {category.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="flex gap-4 w-full sm:w-auto">
+                      <FormField
+                        control={pricingForm.control}
+                        name="price"
+                        render={({ field }) => (
+                          <FormItem className="w-24">
+                            <FormLabel>Price ($)</FormLabel>
+                            <FormControl>
+                              <Input type="number" {...field} className="bg-white" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={pricingForm.control}
+                        name="durationMinutes"
+                        render={({ field }) => (
+                          <FormItem className="w-24">
+                            <FormLabel>Mins</FormLabel>
+                            <FormControl>
+                              <Input type="number" {...field} className="bg-white" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <Button 
+                      type="submit" 
+                      disabled={isPricingSubmitting}
+                      className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700"
+                    >
+                      {isPricingSubmitting ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        "Save"
+                      )}
+                    </Button>
+                  </form>
+                </Form>
+              </div>
 
-            {/* Existing Pricing List */}
-            <div>
-              <h4 className="text-sm font-medium mb-2">Current Pricing</h4>
-              <div className="border rounded-md">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Variation</TableHead>
-                      <TableHead>Price</TableHead>
-                      <TableHead>Duration</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {selectedStyle?.pricing && selectedStyle.pricing.length > 0 ? (
-                      selectedStyle.pricing.map((pricing) => (
-                        <TableRow key={pricing.id}>
-                          <TableCell>{pricing.category.name}</TableCell>
-                          <TableCell>${pricing.price}</TableCell>
-                          <TableCell>{pricing.durationMinutes} min</TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-destructive hover:text-destructive"
-                              onClick={() => onDeletePricing(pricing.categoryId)}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
+              {/* Existing Pricing List */}
+              <div>
+                <h4 className="text-sm font-medium mb-2">Current Pricing</h4>
+                <div className="border rounded-md shadow-sm overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/50">
+                        <TableHead>Variation</TableHead>
+                        <TableHead>Price</TableHead>
+                        <TableHead>Duration</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {selectedStyle?.pricing && selectedStyle.pricing.length > 0 ? (
+                        selectedStyle.pricing.map((pricing) => (
+                          <TableRow key={pricing.id}>
+                            <TableCell className="font-medium">{pricing.category.name}</TableCell>
+                            <TableCell>${pricing.price}</TableCell>
+                            <TableCell>{pricing.durationMinutes} min</TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-muted-foreground hover:text-red-600 hover:bg-red-50"
+                                onClick={() => onDeletePricing(pricing.categoryId)}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-center text-muted-foreground h-24">
+                            No pricing configured yet.
                           </TableCell>
                         </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={4} className="text-center text-muted-foreground">
-                          No pricing configured yet.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
               </div>
             </div>
           </div>
-          </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </motion.div>
   );
 };
 

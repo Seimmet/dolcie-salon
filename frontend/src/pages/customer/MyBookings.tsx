@@ -1,15 +1,15 @@
-
 import { useState, useEffect } from 'react';
 import { bookingService } from '@/services/bookingService';
 import { getMyNotifications, Notification } from '@/services/notificationService';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock, User, Scissors, MapPin, Bell, MessageSquare, Mail } from 'lucide-react';
+import { Calendar, Clock, User, Scissors, MapPin, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { format, isToday, parseISO, differenceInMinutes } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 export default function MyBookings() {
   const [bookings, setBookings] = useState<any[]>([]);
@@ -40,6 +40,7 @@ export default function MyBookings() {
 
   const handleCheckIn = async (bookingId: string) => {
     try {
+        setCheckInLoadingId(bookingId);
         await bookingService.checkInBooking(bookingId);
         toast({
             title: "Checked In!",
@@ -52,47 +53,56 @@ export default function MyBookings() {
             description: (error as Error).message || "Please try again or tell the front desk.",
             variant: "destructive",
         });
+    } finally {
+        setCheckInLoadingId(null);
     }
   };
 
   if (loading) {
     return (
-      <div className="space-y-4">
-        <Skeleton className="h-24 w-full" />
-        <Skeleton className="h-24 w-full" />
-        <Skeleton className="h-24 w-full" />
+      <div className="space-y-6 p-6">
+        <Skeleton className="h-32 w-full rounded-xl" />
+        <Skeleton className="h-32 w-full rounded-xl" />
+        <Skeleton className="h-32 w-full rounded-xl" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="p-4 text-red-500 bg-red-50 rounded-lg">
-        Error: {error}
+      <div className="p-6">
+        <div className="p-4 text-red-500 bg-red-50 rounded-xl border border-red-100 flex items-center gap-3">
+            <AlertCircle className="w-5 h-5" />
+            <span>Error: {error}</span>
+        </div>
       </div>
     );
   }
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'booked': return 'bg-yellow-500 hover:bg-yellow-600';
-      case 'checked_in': return 'bg-teal-500 hover:bg-teal-600';
-      case 'confirmed': return 'bg-green-500 hover:bg-green-600';
-      case 'completed': return 'bg-blue-500 hover:bg-blue-600';
-      case 'cancelled': return 'bg-red-500 hover:bg-red-600';
-      default: return 'bg-gray-500';
+      case 'booked': return 'bg-yellow-500/10 text-yellow-600 border-yellow-200 hover:bg-yellow-500/20';
+      case 'checked_in': return 'bg-teal-500/10 text-teal-600 border-teal-200 hover:bg-teal-500/20';
+      case 'confirmed': return 'bg-green-500/10 text-green-600 border-green-200 hover:bg-green-500/20';
+      case 'completed': return 'bg-blue-500/10 text-blue-600 border-blue-200 hover:bg-blue-500/20';
+      case 'cancelled': return 'bg-red-500/10 text-red-600 border-red-200 hover:bg-red-500/20';
+      default: return 'bg-gray-500/10 text-gray-600 border-gray-200 hover:bg-gray-500/20';
     }
   };
 
-  const upcomingBookings = bookings.filter(b => 
+  const sortedBookings = [...bookings].sort((a, b) => 
+    new Date(b.bookingDate).getTime() - new Date(a.bookingDate).getTime()
+  );
+
+  const upcomingBookings = sortedBookings.filter(b => 
     !['completed', 'cancelled'].includes(b.status.toLowerCase())
   );
 
-  const pastBookings = bookings.filter(b => 
+  const pastBookings = sortedBookings.filter(b => 
     ['completed', 'cancelled'].includes(b.status.toLowerCase())
   );
 
-  const BookingCard = ({ booking }: { booking: any }) => {
+  const BookingCard = ({ booking, index }: { booking: any, index: number }) => {
     // Safely parse date
     let isTodayBooking = false;
     try {
@@ -138,150 +148,144 @@ export default function MyBookings() {
     };
 
     return (
-    <Card className="overflow-hidden">
-      <CardHeader className="bg-primary/5 pb-3">
-        <div className="flex justify-between items-start">
-          <div>
-            <CardTitle className="text-lg">{booking.style?.name ? `${booking.style.name} - ${booking.category?.name}` : booking.category?.name || 'Service'}</CardTitle>
-            <CardDescription className="flex items-center gap-1 mt-1">
-              <Scissors className="w-3 h-3" />
-              ${booking.price || '0.00'}
-            </CardDescription>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay: index * 0.1 }}
+    >
+      <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 border-none shadow-md group">
+        <CardHeader className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent pb-4">
+          <div className="flex justify-between items-start">
+            <div className="space-y-1">
+              <CardTitle className="text-xl font-serif text-foreground/90">
+                {booking.style?.name ? `${booking.style.name} - ${booking.category?.name}` : booking.category?.name || 'Service'}
+              </CardTitle>
+              <CardDescription className="flex items-center gap-1.5 text-primary/80 font-medium">
+                <Scissors className="w-3.5 h-3.5" />
+                ${booking.price || '0.00'}
+              </CardDescription>
+            </div>
+            <Badge className={cn("px-3 py-1 shadow-sm border", getStatusColor(booking.status))}>
+              {booking.status === 'checked_in' ? 'Checked In' : booking.status}
+            </Badge>
           </div>
-          <Badge className={getStatusColor(booking.status)}>
-            {booking.status === 'checked_in' ? 'Checked In' : booking.status}
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="pt-4 space-y-3">
-        <div className="flex items-center gap-2 text-sm">
-          <Calendar className="w-4 h-4 text-muted-foreground" />
-          <span>{format(new Date(booking.bookingDate), 'MMMM do, yyyy')}</span>
-        </div>
-        <div className="flex items-center gap-2 text-sm">
-          <Clock className="w-4 h-4 text-muted-foreground" />
-          <span>{format(new Date(booking.bookingTime), 'h:mm a')}</span>
-        </div>
-        <div className="flex items-center gap-2 text-sm">
-          <User className="w-4 h-4 text-muted-foreground" />
-          <span>Stylist: {booking.stylist?.user?.fullName || 'Any Stylist'}</span>
-        </div>
-      </CardContent>
-      <CardFooter className="bg-muted/20 py-2 px-4 flex flex-col gap-2">
-         <div className="flex justify-between w-full text-xs text-muted-foreground">
-            <span>Booking Fee Paid</span>
-            <span className="font-mono">${booking.payment?.amount || '0.00'}</span>
-         </div>
-         {canCheckIn && (
-             <Button 
-                className="w-full mt-2 gap-2 bg-teal-600 hover:bg-teal-700 text-white" 
-                size="sm"
-                onClick={handleCheckInClick}
-                disabled={checkInLoadingId === booking.id}
-             >
-                {checkInLoadingId === booking.id ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                    <MapPin className="w-4 h-4" />
-                )}
-                {checkInLoadingId === booking.id ? "Checking In..." : "I'm Here (Check In)"}
-             </Button>
-         )}
-      </CardFooter>
-    </Card>
-  )};
-
-  const NotificationList = () => {
-    if (notifications.length === 0) {
-      return (
-        <div className="text-center py-10 bg-muted/20 rounded-lg">
-          <Bell className="w-10 h-10 mx-auto text-muted-foreground mb-3 opacity-50" />
-          <p className="text-muted-foreground">No notifications yet.</p>
-        </div>
-      );
-    }
-
-    return (
-      <div className="space-y-4">
-        {notifications.map((notification) => (
-          <Card key={notification.id} className="overflow-hidden">
-            <div className="flex flex-row items-start p-4 gap-4">
-              <div className={`p-2 rounded-full shrink-0 ${notification.type === 'EMAIL' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'}`}>
-                {notification.type === 'EMAIL' ? <Mail className="w-5 h-5" /> : <MessageSquare className="w-5 h-5" />}
+        </CardHeader>
+        <CardContent className="pt-6 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex items-center gap-3 text-sm p-3 rounded-lg bg-muted/30 group-hover:bg-muted/50 transition-colors">
+              <div className="p-2 bg-primary/10 rounded-full text-primary">
+                <Calendar className="w-4 h-4" />
               </div>
-              <div className="flex-1 space-y-1">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-semibold text-sm">
-                    {notification.subject || (notification.type === 'SMS' ? 'Text Message' : 'Notification')}
-                  </h4>
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">
-                    {format(new Date(notification.createdAt), 'MMM d, h:mm a')}
-                  </span>
-                </div>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {notification.content.replace(/<[^>]*>?/gm, '') /* Simple strip HTML for preview if needed, or render safely */}
-                </p>
+              <div>
+                <p className="text-muted-foreground text-xs">Date</p>
+                <p className="font-medium">{format(new Date(booking.bookingDate), 'MMMM do, yyyy')}</p>
               </div>
             </div>
-          </Card>
-        ))}
-      </div>
+            <div className="flex items-center gap-3 text-sm p-3 rounded-lg bg-muted/30 group-hover:bg-muted/50 transition-colors">
+              <div className="p-2 bg-primary/10 rounded-full text-primary">
+                <Clock className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-muted-foreground text-xs">Time</p>
+                <p className="font-medium">{format(new Date(booking.bookingTime), 'h:mm a')}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 text-sm p-3 rounded-lg bg-muted/30 group-hover:bg-muted/50 transition-colors">
+              <div className="p-2 bg-primary/10 rounded-full text-primary">
+                <User className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-muted-foreground text-xs">Stylist</p>
+                <p className="font-medium">{booking.stylist?.user?.fullName || 'Any Stylist'}</p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+        <CardFooter className="bg-muted/30 py-4 px-6 flex flex-col gap-3">
+           <div className="flex justify-between w-full text-sm text-muted-foreground items-center">
+              <span className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-green-500" />
+                Booking Fee Paid
+              </span>
+              <span className="font-mono font-semibold text-foreground">${booking.payment?.amount || '0.00'}</span>
+           </div>
+           {canCheckIn && (
+               <Button 
+                  className="w-full mt-2 gap-2 bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-700 hover:to-teal-600 text-white shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5" 
+                  onClick={handleCheckInClick}
+                  disabled={checkInLoadingId === booking.id}
+               >
+                  {checkInLoadingId === booking.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                      <MapPin className="w-4 h-4" />
+                  )}
+                  {checkInLoadingId === booking.id ? "Checking In..." : "I'm Here (Check In)"}
+               </Button>
+           )}
+        </CardFooter>
+      </Card>
+    </motion.div>
     );
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold tracking-tight">My Dashboard</h2>
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="space-y-8 max-w-5xl mx-auto p-4 sm:p-6 lg:p-8"
+    >
+      <div className="flex flex-col gap-2 mb-8">
+        <h1 className="text-4xl font-bold font-serif text-foreground tracking-tight">My Appointments</h1>
+        <p className="text-muted-foreground text-lg">Manage your upcoming visits and view past history.</p>
       </div>
-      
-      <Tabs defaultValue="upcoming" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
-          <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-          <TabsTrigger value="history">History</TabsTrigger>
-          <TabsTrigger value="notifications">
-            Notifications
-            {notifications.length > 0 && (
-              <Badge variant="secondary" className="ml-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-[10px]">
-                {notifications.length}
-              </Badge>
-            )}
-          </TabsTrigger>
-        </TabsList>
 
-        <TabsContent value="upcoming" className="mt-6">
-          {upcomingBookings.length === 0 ? (
-            <div className="text-center py-10 border rounded-lg bg-muted/10">
-              <p className="text-muted-foreground">No upcoming appointments.</p>
-              <Button variant="link" className="mt-2 text-primary">Book an appointment</Button>
-            </div>
-          ) : (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {upcomingBookings.map((booking) => (
-                <BookingCard key={booking.id} booking={booking} />
+      <div className="space-y-8">
+        {upcomingBookings.length > 0 && (
+          <section className="space-y-4">
+            <h2 className="text-2xl font-serif font-semibold text-foreground flex items-center gap-2">
+              <Calendar className="w-6 h-6 text-primary" />
+              Upcoming
+            </h2>
+            <div className="grid gap-6">
+              {upcomingBookings.map((booking, index) => (
+                <BookingCard key={booking.id} booking={booking} index={index} />
               ))}
             </div>
-          )}
-        </TabsContent>
+          </section>
+        )}
 
-        <TabsContent value="history" className="mt-6">
-          {pastBookings.length === 0 ? (
-            <div className="text-center py-10 border rounded-lg bg-muted/10">
-              <p className="text-muted-foreground">No booking history.</p>
-            </div>
-          ) : (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {pastBookings.map((booking) => (
-                <BookingCard key={booking.id} booking={booking} />
+        {pastBookings.length > 0 && (
+          <section className="space-y-4">
+             <h2 className="text-2xl font-serif font-semibold text-foreground/80 flex items-center gap-2 mt-8">
+              <Clock className="w-6 h-6 text-muted-foreground" />
+              History
+            </h2>
+            <div className="grid gap-6 opacity-80 hover:opacity-100 transition-opacity duration-300">
+              {pastBookings.map((booking, index) => (
+                <BookingCard key={booking.id} booking={booking} index={index} />
               ))}
             </div>
-          )}
-        </TabsContent>
+          </section>
+        )}
 
-        <TabsContent value="notifications" className="mt-6">
-          <NotificationList />
-        </TabsContent>
-      </Tabs>
-    </div>
+        {bookings.length === 0 && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center py-16 bg-muted/20 rounded-2xl border-2 border-dashed border-muted"
+          >
+            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+              <Calendar className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-xl font-medium text-foreground mb-2">No bookings found</h3>
+            <p className="text-muted-foreground max-w-md mx-auto">
+              You haven't made any appointments yet. Book your first service to get started!
+            </p>
+          </motion.div>
+        )}
+      </div>
+    </motion.div>
   );
 }

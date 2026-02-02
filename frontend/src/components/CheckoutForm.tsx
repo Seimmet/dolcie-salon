@@ -66,7 +66,7 @@ export default function CheckoutForm({ onSuccess, amount }: CheckoutFormProps) {
         <Button 
             type="submit" 
             disabled={!stripe || loading} 
-            className="w-full mt-4"
+            className="w-full mt-4 bg-gradient-gold hover:opacity-90 text-white shadow-md transition-all"
         >
             {loading ? (
                 <>

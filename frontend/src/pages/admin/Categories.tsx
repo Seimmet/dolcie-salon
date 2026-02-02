@@ -31,6 +31,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { motion, AnimatePresence } from "framer-motion";
 
 const categorySchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -145,13 +146,25 @@ const Categories = () => {
   );
 
   return (
-    <div className="space-y-6">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="space-y-6"
+    >
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-charcoal">Variations</h2>
-          <p className="text-muted-foreground">Manage variations (e.g., Small, Medium, Large) that can be applied to styles.</p>
+          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+            Variations
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Manage variations (e.g., Small, Medium, Large) that can be applied to styles.
+          </p>
         </div>
-        <Button onClick={openCreateDialog} className="bg-gold hover:bg-gold-dark text-white">
+        <Button 
+          onClick={openCreateDialog} 
+          className="bg-purple-600 hover:bg-purple-700 text-white shadow-md hover:shadow-lg transition-all duration-300"
+        >
           <Plus className="mr-2 h-4 w-4" /> Add Variation
         </Button>
       </div>
@@ -163,60 +176,71 @@ const Categories = () => {
             placeholder="Search variations..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-8"
+            className="pl-8 border-purple-100 focus:border-purple-300 focus:ring-purple-200"
           />
         </div>
       </div>
 
-      <div className="rounded-md border border-border">
+      <div className="rounded-md border shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow>
+            <TableRow className="bg-purple-50/50 hover:bg-purple-50/50">
               <TableHead>Name</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={2} className="h-24 text-center">
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin inline" /> Loading...
-                </TableCell>
-              </TableRow>
-            ) : filteredCategories.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={2} className="h-24 text-center">
-                  {debouncedSearch ? "No variations found matching your search." : "No variations found. Add one to get started."}
-                </TableCell>
-              </TableRow>
-            ) : (
-              paginatedCategories.map((category) => (
-                <TableRow key={category.id}>
-                  <TableCell className="font-medium flex items-center gap-2">
-                    <Tags className="h-4 w-4 text-muted-foreground" />
-                    {category.name}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => openEditDialog(category)}
-                      className="hover:bg-muted"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(category.id)}
-                      className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+            <AnimatePresence>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={2} className="h-24 text-center">
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin inline text-purple-600" /> Loading...
                   </TableCell>
                 </TableRow>
-              ))
-            )}
+              ) : filteredCategories.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={2} className="h-24 text-center">
+                    {debouncedSearch ? "No variations found matching your search." : "No variations found. Add one to get started."}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                paginatedCategories.map((category, index) => (
+                  <motion.tr
+                    key={category.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="group hover:bg-muted/30 transition-colors border-b last:border-0"
+                  >
+                    <TableCell className="font-medium flex items-center gap-2">
+                      <div className="p-2 bg-purple-100 rounded-full">
+                        <Tags className="h-4 w-4 text-purple-600" />
+                      </div>
+                      {category.name}
+                    </TableCell>
+                    <TableCell className="text-right space-x-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openEditDialog(category)}
+                        className="hover:bg-purple-50 hover:text-purple-700 transition-colors"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDelete(category.id)}
+                        className="text-muted-foreground hover:text-red-600 hover:bg-red-50 transition-colors"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </motion.tr>
+                ))
+              )}
+            </AnimatePresence>
           </TableBody>
         </Table>
       </div>
@@ -251,7 +275,9 @@ const Categories = () => {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[425px] max-h-[90vh] flex flex-col w-[95vw]">
           <DialogHeader>
-            <DialogTitle>{editingCategory ? "Edit Variation" : "Add New Variation"}</DialogTitle>
+            <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              {editingCategory ? "Edit Variation" : "Add New Variation"}
+            </DialogTitle>
             <DialogDescription>
               {editingCategory
                 ? "Update the details of the variation."
@@ -259,39 +285,43 @@ const Categories = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto px-1">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. Small" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <DialogFooter>
-                <Button type="submit" disabled={isSubmitting} className="bg-gold hover:bg-gold-dark text-white">
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    editingCategory ? "Update Variation" : "Create Variation"
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. Small" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
+                />
+                <DialogFooter>
+                  <Button 
+                    type="submit" 
+                    disabled={isSubmitting} 
+                    className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      editingCategory ? "Update Variation" : "Create Variation"
+                    )}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </motion.div>
   );
 };
 

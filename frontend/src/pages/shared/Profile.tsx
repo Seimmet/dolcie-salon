@@ -4,7 +4,7 @@ import { useOutletContext } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
-import { Loader2, Upload, User as UserIcon, Camera } from "lucide-react";
+import { Loader2, Camera, User as UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,10 +22,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { authService, User } from "@/services/authService";
 import { userService } from "@/services/userService";
+import { motion } from "framer-motion";
 
 const profileSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
@@ -68,7 +67,6 @@ const Profile = () => {
     const fetchProfile = async () => {
       try {
         const userData = await authService.getMe();
-        console.log("Fetched user data:", userData);
         
         setUser(userData);
         setGlobalUser(userData);
@@ -123,18 +121,11 @@ const Profile = () => {
 
       const updatedUser = await userService.updateProfile(formData);
       
-      // Update local state
       setUser(updatedUser);
       setGlobalUser(updatedUser);
-      
-      // Update local storage user data via authService helper if needed, 
-      // but authService.getMe() already updates it. 
-      // We can manually update it here to be safe and instant.
       localStorage.setItem('user', JSON.stringify(updatedUser));
       
       toast.success("Profile updated successfully");
-      
-      // Clear password field
       form.setValue("password", "");
     } catch (error) {
       console.error(error);
@@ -153,53 +144,57 @@ const Profile = () => {
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 p-4 min-h-[80vh]">
-      <div>
-        <h2 className="text-4xl font-bold tracking-tight text-charcoal">Profile Settings</h2>
-        <p className="text-lg text-muted-foreground mt-2">Manage your account settings and profile picture.</p>
-      </div>
+    <div className="p-4 md:p-6 max-w-4xl mx-auto">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
+        {/* Profile Photo Section */}
+        <div className="bg-card rounded-xl border border-border shadow-card p-6 mb-6">
+          <div className="flex items-center gap-6">
+            <div className="relative group">
+              <div className="w-24 h-24 rounded-full bg-gradient-gold flex items-center justify-center overflow-hidden border-2 border-white shadow-lg">
+                {previewImage ? (
+                  <img src={previewImage} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <UserIcon className="w-10 h-10 text-secondary" />
+                )}
+              </div>
+              <label 
+                htmlFor="profile-image-upload"
+                className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center hover:bg-espresso-light transition-colors cursor-pointer shadow-md"
+              >
+                <Camera className="w-4 h-4" />
+                <input 
+                  id="profile-image-upload" 
+                  type="file" 
+                  accept="image/*" 
+                  className="hidden" 
+                  onChange={handleImageChange}
+                />
+              </label>
+            </div>
+            <div>
+              <h3 className="text-xl font-serif font-semibold text-foreground">
+                {user?.fullName}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'Member'}
+              </p>
+            </div>
+          </div>
+        </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Personal Information</CardTitle>
-          <CardDescription>Update your personal details here.</CardDescription>
-        </CardHeader>
-        <CardContent>
+        {/* Profile Form Section */}
+        <div className="bg-card rounded-xl border border-border shadow-card p-6">
+          <h3 className="text-lg font-serif font-semibold text-foreground mb-6">
+            Personal Information
+          </h3>
+          
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              
-              {/* Profile Image Upload */}
-              <div className="flex flex-col items-center justify-center space-y-4 sm:flex-row sm:space-y-0 sm:space-x-6">
-                <div className="relative group">
-                  <Avatar className="h-24 w-24 border-2 border-border">
-                    <AvatarImage src={previewImage || ""} alt={user?.fullName} className="object-cover" />
-                    <AvatarFallback className="bg-muted text-muted-foreground text-2xl">
-                      {user?.fullName?.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <label 
-                    htmlFor="profile-image-upload" 
-                    className="absolute bottom-0 right-0 bg-gold hover:bg-gold-dark text-white p-1.5 rounded-full cursor-pointer shadow-md transition-colors"
-                  >
-                    <Camera className="h-4 w-4" />
-                    <input 
-                      id="profile-image-upload" 
-                      type="file" 
-                      accept="image/*" 
-                      className="hidden" 
-                      onChange={handleImageChange}
-                    />
-                  </label>
-                </div>
-                <div className="text-center sm:text-left">
-                  <h3 className="font-medium text-lg">Profile Picture</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Upload a new photo. JPG, GIF or PNG.
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-6 md:grid-cols-2">
                 <FormField
                   control={form.control}
                   name="fullName"
@@ -207,7 +202,7 @@ const Profile = () => {
                     <FormItem>
                       <FormLabel>Full Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="John Doe" {...field} />
+                        <Input placeholder="John Doe" {...field} className="h-12 bg-background" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -218,9 +213,9 @@ const Profile = () => {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel>Email Address</FormLabel>
                       <FormControl>
-                        <Input placeholder="john@example.com" {...field} />
+                        <Input placeholder="john@example.com" {...field} className="h-12 bg-background" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -233,7 +228,7 @@ const Profile = () => {
                     <FormItem>
                       <FormLabel>Phone Number</FormLabel>
                       <FormControl>
-                        <Input placeholder="+1 (555) 000-0000" {...field} />
+                        <Input placeholder="+1 (555) 000-0000" {...field} className="h-12 bg-background" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -246,12 +241,13 @@ const Profile = () => {
                     <FormItem>
                       <FormLabel>Address</FormLabel>
                       <FormControl>
-                        <Input placeholder="123 Main St, City, Country" {...field} />
+                        <Input placeholder="123 Main St, City, Country" {...field} className="h-12 bg-background" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+                
                 <FormField
                   control={form.control}
                   name="birthMonth"
@@ -260,7 +256,7 @@ const Profile = () => {
                       <FormLabel>Birth Month</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className="h-12 bg-background">
                             <SelectValue placeholder="Select month" />
                           </SelectTrigger>
                         </FormControl>
@@ -284,7 +280,7 @@ const Profile = () => {
                       <FormLabel>Birth Day</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className="h-12 bg-background">
                             <SelectValue placeholder="Select day" />
                           </SelectTrigger>
                         </FormControl>
@@ -302,8 +298,8 @@ const Profile = () => {
                 />
               </div>
 
-              <div className="pt-4 border-t border-border">
-                <h3 className="mb-4 text-lg font-medium">Security</h3>
+              <div className="pt-6 border-t border-border">
+                <h3 className="mb-4 text-lg font-serif font-medium">Security</h3>
                 <FormField
                   control={form.control}
                   name="password"
@@ -311,7 +307,7 @@ const Profile = () => {
                     <FormItem>
                       <FormLabel>New Password</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="Leave blank to keep current password" {...field} />
+                        <Input type="password" placeholder="Leave blank to keep current password" {...field} className="h-12 bg-background" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -319,11 +315,11 @@ const Profile = () => {
                 />
               </div>
 
-              <div className="flex justify-end">
+              <div className="flex justify-end pt-4">
                 <Button 
                   type="submit" 
                   disabled={isSaving}
-                  className="bg-gold hover:bg-gold-dark text-white"
+                  className="bg-gold hover:bg-gold-dark text-secondary font-semibold h-12 px-8"
                 >
                   {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Save Changes
@@ -331,8 +327,8 @@ const Profile = () => {
               </div>
             </form>
           </Form>
-        </CardContent>
-      </Card>
+        </div>
+      </motion.div>
     </div>
   );
 };

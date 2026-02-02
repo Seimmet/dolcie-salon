@@ -1,15 +1,4 @@
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from "@/components/ui/sidebar";
-import {
   LayoutDashboard,
   Calendar,
   Users,
@@ -18,23 +7,28 @@ import {
   FileText,
   BarChart3,
   Clock,
-  History,
   User as UserIcon,
   Gift,
   MessageSquare,
+  LogOut,
+  X
 } from "lucide-react";
-import { User } from "@/services/authService";
-import { Link, useLocation } from "react-router-dom";
+import { User, authService } from "@/services/authService";
+import { NavLink, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useSettings } from "@/contexts/SettingsContext";
+import { cn } from "@/lib/utils";
 
 interface DashboardSidebarProps {
   user: User;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-export function DashboardSidebar({ user }: DashboardSidebarProps) {
-  const location = useLocation();
+export function DashboardSidebar({ user, isOpen, onClose }: DashboardSidebarProps) {
   const { settings } = useSettings();
+  const navigate = useNavigate();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [logoUrl, setLogoUrl] = useState<string | undefined>(undefined);
   const [salonName, setSalonName] = useState<string>("Victoria Braids");
   
@@ -87,36 +81,79 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
   }
   if (user.role === "stylist") items = stylistItems;
 
+  const handleLogout = () => {
+    authService.logout();
+    navigate("/thesalonadmin");
+  };
+
   return (
-    <Sidebar>
-      <SidebarHeader className="p-4 border-b border-border/10 bg-cream/10">
-        <div className="flex items-center justify-center w-full py-2">
-          <img 
-            src={logoUrl || "/logo.png"} 
-            alt={salonName} 
-            className="h-28 w-auto object-contain"
-          />
+    <>
+      {/* Overlay */}
+      {isOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-secondary/50 z-40 backdrop-blur-sm"
+          onClick={onClose}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={cn(
+          "fixed lg:sticky top-0 left-0 h-screen w-64 bg-secondary text-secondary-foreground z-50 transition-transform duration-300 border-r border-sidebar-border",
+          isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        )}
+      >
+        <div className="flex flex-col h-full">
+          {/* Mobile Close Button */}
+          <button 
+            onClick={onClose}
+            className="lg:hidden absolute top-4 right-4 p-2 text-secondary-foreground hover:bg-white/10 rounded-full"
+          >
+            <X className="w-5 h-5" />
+          </button>
+
+          {/* Logo */}
+          <div className="p-6 border-b border-sidebar-border/10">
+            <h1 className="text-xl font-serif font-bold text-center">
+              {salonName.split(' ')[0]} <span className="text-gold">{salonName.split(' ').slice(1).join(' ')}</span>
+            </h1>
+          </div>
+
+          {/* Navigation */}
+          <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+            {items.map((item) => (
+              <NavLink
+                key={item.url}
+                to={item.url}
+                end={item.url === "/dashboard" || item.url === "/admin" || item.url === "/stylist"}
+                onClick={() => onClose()}
+                className={({ isActive }) =>
+                  cn(
+                    "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200",
+                    isActive
+                      ? "bg-white/10 text-gold shadow-sm"
+                      : "text-secondary-foreground/70 hover:bg-white/5 hover:text-secondary-foreground"
+                  )
+                }
+              >
+                <item.icon className="w-5 h-5" />
+                {item.title}
+              </NavLink>
+            ))}
+          </nav>
+
+          {/* Logout */}
+          <div className="p-4 border-t border-sidebar-border/10 bg-black/20">
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-3 px-4 py-3 w-full rounded-lg text-sm font-medium text-secondary-foreground/70 hover:bg-destructive/90 hover:text-destructive-foreground transition-colors"
+            >
+              <LogOut className="w-5 h-5" />
+              Logout
+            </button>
+          </div>
         </div>
-      </SidebarHeader>
-      <SidebarContent className="bg-background">
-        <SidebarGroup>
-          <SidebarGroupLabel>Menu</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu className="gap-3">
-              {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={location.pathname === item.url} className="h-12">
-                    <Link to={item.url} className="flex items-center gap-4 px-4">
-                      <item.icon className="w-6 h-6" />
-                      <span className="text-base font-medium">{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-    </Sidebar>
+      </aside>
+    </>
   );
 }
