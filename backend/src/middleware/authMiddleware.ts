@@ -3,19 +3,15 @@ import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'secret';
 
-// Extend Express Request interface to include user
-declare global {
-  namespace Express {
-    interface Request {
-      user?: {
-        id: string;
-        role: string;
-      };
-    }
-  }
+// Define Custom Request Interface
+export interface AuthRequest extends Request {
+  user?: {
+    id: string;
+    role: string;
+  };
 }
 
-export const protect = (req: Request, res: Response, next: NextFunction): void => {
+export const protect = (req: AuthRequest, res: Response, next: NextFunction): void => {
   let token;
 
   if (
@@ -37,7 +33,7 @@ export const protect = (req: Request, res: Response, next: NextFunction): void =
 
 // Optional authentication middleware
 // Does not block if token is missing, but populates req.user if valid token is present
-export const authenticateToken = (req: Request, res: Response, next: NextFunction): void => {
+export const authenticateToken = (req: AuthRequest, res: Response, next: NextFunction): void => {
   let token;
 
   if (
@@ -57,7 +53,7 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
 };
 
 export const authorize = (...roles: string[]) => {
-  return (req: Request, res: Response, next: NextFunction): void => {
+  return (req: AuthRequest, res: Response, next: NextFunction): void => {
     if (!req.user || !roles.includes(req.user.role)) {
       res.status(403).json({ message: `User role ${req.user?.role} is not authorized to access this route` });
       return;
