@@ -30,7 +30,7 @@ const CTASection = () => {
           </p>
 
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Link to="/register">
+            <Link to="/booking">
               <Button variant="gold" size="xl" className="group">
                 Book Now
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />

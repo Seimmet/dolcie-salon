@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { IncomingHttpHeaders } from 'http';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'secret';
 
@@ -9,6 +10,7 @@ export interface AuthRequest extends Request {
     id: string;
     role: string;
   };
+  headers: IncomingHttpHeaders;
 }
 
 export const protect = (req: AuthRequest, res: Response, next: NextFunction): void => {
